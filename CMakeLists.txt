@@ -20,9 +20,6 @@ find_package(LLVM REQUIRED CONFIG PATHS ${PATH_TO_LLVM} NO_DEFAULT_PATH)
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
-include(version)
-include(mull)
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
+add_subdirectory(vendor)
 add_subdirectory(tools)
