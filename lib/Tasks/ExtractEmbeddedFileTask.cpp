@@ -10,7 +10,7 @@ using namespace llvm;
 
 namespace mull_xctest {
 
-static Expected<ArrayRef<unsigned char>> getBitcodeSectionContent(const object::MachOObjectFile *object) {
+static ArrayRef<unsigned char> getBitcodeSectionContent(const object::MachOObjectFile *object) {
     for (auto it = object->section_begin(); it != object->section_end(); ++it) {
         auto section = *it;
         auto sectionName = section.getName();
@@ -25,10 +25,11 @@ static Expected<ArrayRef<unsigned char>> getBitcodeSectionContent(const object::
         }
         auto content = object->getSectionContents(it->getRawDataRefImpl());
         if (!content) {
-            return content.takeError();
+            return {};
         }
         return content.get();
     }
+    return {};
 }
 
 void ExtractEmbeddedFileTask::operator()(iterator begin, iterator end, Out &storage,
