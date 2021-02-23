@@ -9,6 +9,7 @@ project(MullXCTest
 
 list(APPEND CMAKE_MODULE_PATH
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,8 +21,18 @@ find_package(LLVM REQUIRED CONFIG PATHS ${PATH_TO_LLVM} NO_DEFAULT_PATH)
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
+
+set(MULL_XCTEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(MULL_XCTEST_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/MullXCTest)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_subdirectory(lib)
 add_subdirectory(vendor)
 add_subdirectory(tools)
+
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+  include(CTest)
+endif()
+
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif()

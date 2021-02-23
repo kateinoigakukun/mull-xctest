@@ -1,0 +1,4 @@
+config.mull_xctest_source_dir = "@MULL_XCTEST_SOURCE_DIR@"
+
+lit_config.load_config(
+    config, os.path.join(config.mull_xctest_source_dir, "tests", "lit.cfg"))
