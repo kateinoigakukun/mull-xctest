@@ -1,4 +1,4 @@
-#include "MullXCTest/Tasks/ExtractRawEmbeddedFileFromBinary.h"
+#include "MullXCTest/Tasks/ExtractEmbeddedFileTask.h"
 #include <ebc/BitcodeContainer.h>
 #include <ebc/BitcodeRetriever.h>
 #include "llvm/Object/MachO.h"

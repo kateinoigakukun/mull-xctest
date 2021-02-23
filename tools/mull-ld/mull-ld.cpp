@@ -10,7 +10,7 @@
 #include "ebc/EmbeddedFile.h"
 #include "ebc/BitcodeRetriever.h"
 #include "ebc/BitcodeContainer.h"
-#include "MullXCTest/Tasks/ExtractRawEmbeddedFileFromBinary.h"
+#include "MullXCTest/Tasks/ExtractEmbeddedFileTask.h"
 #include "MullXCTest/Tasks/LoadBitcodeFromBufferTask.h"
 #include <vector>
 #include <string>
