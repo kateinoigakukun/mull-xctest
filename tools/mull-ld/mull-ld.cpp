@@ -11,6 +11,7 @@
 #include "ebc/BitcodeRetriever.h"
 #include "ebc/BitcodeContainer.h"
 #include "MullXCTest/Tasks/ExtractRawEmbeddedFileFromBinary.h"
+#include "MullXCTest/Tasks/LoadBitcodeFromBufferTask.h"
 #include <vector>
 #include <string>
 #include <unistd.h>
@@ -36,35 +37,36 @@ static void validateInputFiles(const std::vector<llvm::StringRef> &inputFiles) {
 
 int main(int argc, char **argv) {
     mull::Diagnostics diagnostics;
-    std::vector<llvm::StringRef> inputBitcodes;
-    std::vector<std::unique_ptr<ebc::EmbeddedFile>> embeddedFiles;
+    std::vector<llvm::StringRef> inputObjects;
+    std::vector<std::unique_ptr<llvm::MemoryBuffer>> bitcodeBuffers;
 
     std::vector<const char *> args(&argv[0], &argv[argc]);
-    extractBitcodeFiles(args, inputBitcodes);
-    validateInputFiles(inputBitcodes);
+    extractBitcodeFiles(args, inputObjects);
+    validateInputFiles(inputObjects);
 
     mull::Configuration configuration;
     configuration.parallelization = mull::ParallelizationConfig::defaultConfig();
+    configuration.parallelization.workers = 1;
 
     std::vector<mull_xctest::ExtractEmbeddedFileTask> extractTasks;
     for (int i = 0; i < configuration.parallelization.workers; i++) {
       extractTasks.emplace_back(diagnostics);
     }
     mull::TaskExecutor<mull_xctest::ExtractEmbeddedFileTask> extractExecutor(
-        diagnostics, "Extracting embeded files", inputBitcodes, embeddedFiles, std::move(extractTasks));
+        diagnostics, "Extracting embeded bitcode", inputObjects, bitcodeBuffers, std::move(extractTasks));
     extractExecutor.execute();
 
 
     std::vector<std::unique_ptr<llvm::LLVMContext>> contexts;
-    std::vector<mull::LoadBitcodeFromBinaryTask> tasks;
+    std::vector<mull_xctest::LoadBitcodeFromBufferTask> tasks;
     for (int i = 0; i < configuration.parallelization.workers; i++) {
       auto context = std::make_unique<llvm::LLVMContext>();
-      tasks.emplace_back(mull::LoadBitcodeFromBinaryTask(diagnostics, *context));
+      tasks.emplace_back(diagnostics, *context);
       contexts.push_back(std::move(context));
     }
     std::vector<std::unique_ptr<mull::Bitcode>> bitcode;
-    mull::TaskExecutor<mull::LoadBitcodeFromBinaryTask> loadExecutor(
-        diagnostics, "Loading bitcode files", embeddedFiles, bitcode, std::move(tasks));
+    mull::TaskExecutor<mull_xctest::LoadBitcodeFromBufferTask> loadExecutor(
+        diagnostics, "Loading bitcode files", bitcodeBuffers, bitcode, std::move(tasks));
     loadExecutor.execute();
 
     return 0;

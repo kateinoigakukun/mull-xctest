@@ -1,8 +1,10 @@
 set(mullXCTest_sources
     Tasks/ExtractRawEmbeddedFileFromBinary.cpp
+    Tasks/LoadBitcodeFromBufferTask.cpp
 )
 set(mullXCTest_headers
     ${MULL_XCTEST_INCLUDE_DIR}/Tasks/ExtractRawEmbeddedFileFromBinary.h
+    ${MULL_XCTEST_INCLUDE_DIR}/Tasks/LoadBitcodeFromBufferTask.h
 )
 
 add_library(mullXCTest STATIC

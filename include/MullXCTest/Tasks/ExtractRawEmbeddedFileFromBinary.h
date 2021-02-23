@@ -1,7 +1,7 @@
 #ifndef MULL_XCTEST_TASKS_EXTRACT_EMBEDDED_FILE_TASK_H
 #define MULL_XCTEST_TASKS_EXTRACT_EMBEDDED_FILE_TASK_H
 
-#include <llvm/IR/LLVMContext.h>
+#include <llvm/Support/MemoryBuffer.h>
 #include "ebc/EmbeddedFile.h"
 #include "mull/Diagnostics/Diagnostics.h"
 #include "mull/Parallelization/Progress.h"
@@ -13,7 +13,7 @@ namespace mull_xctest {
 class ExtractEmbeddedFileTask {
 public:
   using In = std::vector<llvm::StringRef>;
-  using Out = std::vector<std::unique_ptr<ebc::EmbeddedFile>>;
+  using Out = std::vector<std::unique_ptr<llvm::MemoryBuffer>>;
   using iterator = In::iterator;
 
     ExtractEmbeddedFileTask(mull::Diagnostics &diagnostics)
