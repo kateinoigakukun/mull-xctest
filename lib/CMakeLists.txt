@@ -11,4 +11,4 @@ add_library(mullXCTest STATIC
     ${mullXCTest_sources}
     ${mullXCTest_headers})
 
-target_link_libraries(mullXCTest ebc)
+target_link_libraries(mullXCTest mull ebc)
