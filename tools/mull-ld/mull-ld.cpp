@@ -1,12 +1,21 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Support/TargetRegistry.h"
 #include "mull/Version.h"
 #include "mull/Bitcode.h"
 #include "mull/Diagnostics/Diagnostics.h"
 #include "mull/Parallelization/Tasks/LoadBitcodeFromBinaryTask.h"
 #include "mull/Parallelization/TaskExecutor.h"
 #include "mull/Config/Configuration.h"
+#include "mull/Program/Program.h"
+#include "mull/Toolchain/Toolchain.h"
+#include "mull/Filters/Filters.h"
+#include "mull/Driver.h"
+#include "mull/Mutators/MutatorsFactory.h"
+#include "mull/MutationsFinder.h"
+#include "mull/Result.h"
 #include "ebc/EmbeddedFile.h"
 #include "ebc/BitcodeRetriever.h"
 #include "ebc/BitcodeContainer.h"
@@ -44,6 +53,11 @@ int main(int argc, char **argv) {
     extractBitcodeFiles(args, inputObjects);
     validateInputFiles(inputObjects);
 
+    llvm::InitializeNativeTarget();
+    llvm::InitializeNativeTargetAsmPrinter();
+    llvm::InitializeNativeTargetAsmParser();
+    llvm::TargetRegistry::printRegisteredTargetsForVersion(llvm::dbgs());
+
     mull::Configuration configuration;
     configuration.parallelization = mull::ParallelizationConfig::defaultConfig();
     configuration.parallelization.workers = 1;
@@ -71,5 +85,15 @@ int main(int argc, char **argv) {
         diagnostics, "Loading bitcode files", bitcodeBuffers, bitcode, std::move(tasks));
     loadExecutor.execute();
 
+    mull::Program program(std::move(bitcode));
+    mull::Toolchain toolchain(diagnostics, configuration);
+    mull::Filters filters;
+    mull::MutatorsFactory factory(diagnostics);
+    
+    mull::MutationsFinder mutationsFinder(factory.mutators({}), configuration);
+
+    mull::Driver driver(diagnostics, configuration, program, toolchain, filters, mutationsFinder);
+    auto result = driver.run();
+    llvm::llvm_shutdown();
     return 0;
 }
