@@ -56,13 +56,16 @@ int main(int argc, char **argv) {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
-    llvm::TargetRegistry::printRegisteredTargetsForVersion(llvm::dbgs());
 
     mull::Configuration configuration;
     configuration.parallelization = mull::ParallelizationConfig::defaultConfig();
     configuration.parallelization.workers = 1;
     // FIXME: Link input objects with real linker
     configuration.executable = "echo";
+    configuration.linker = "/Applications/Xcode-12.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang";
+    configuration.debugEnabled = true;
+    configuration.linkerTimeout = mull::MullDefaultLinkerTimeoutMilliseconds;
+    configuration.timeout = mull::MullDefaultTimeoutMilliseconds;
 
     std::vector<mull_xctest::ExtractEmbeddedFileTask> extractTasks;
     for (int i = 0; i < configuration.parallelization.workers; i++) {
