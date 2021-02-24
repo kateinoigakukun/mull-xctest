@@ -21,6 +21,7 @@
 #include "ebc/BitcodeContainer.h"
 #include "MullXCTest/Tasks/ExtractEmbeddedFileTask.h"
 #include "MullXCTest/Tasks/LoadBitcodeFromBufferTask.h"
+#include "LinkerInvocation.h"
 #include <vector>
 #include <string>
 #include <unistd.h>
@@ -58,8 +59,6 @@ int main(int argc, char **argv) {
     llvm::InitializeNativeTargetAsmParser();
 
     mull::Configuration configuration;
-    configuration.parallelization = mull::ParallelizationConfig::defaultConfig();
-    configuration.parallelization.workers = 1;
     // FIXME: Link input objects with real linker
     configuration.executable = "echo";
     configuration.linker = "/Applications/Xcode-12.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang";
@@ -67,36 +66,8 @@ int main(int argc, char **argv) {
     configuration.linkerTimeout = mull::MullDefaultLinkerTimeoutMilliseconds;
     configuration.timeout = mull::MullDefaultTimeoutMilliseconds;
 
-    std::vector<mull_xctest::ExtractEmbeddedFileTask> extractTasks;
-    for (int i = 0; i < configuration.parallelization.workers; i++) {
-      extractTasks.emplace_back(diagnostics);
-    }
-    mull::TaskExecutor<mull_xctest::ExtractEmbeddedFileTask> extractExecutor(
-        diagnostics, "Extracting embeded bitcode", inputObjects, bitcodeBuffers, std::move(extractTasks));
-    extractExecutor.execute();
-
-
-    std::vector<std::unique_ptr<llvm::LLVMContext>> contexts;
-    std::vector<mull_xctest::LoadBitcodeFromBufferTask> tasks;
-    for (int i = 0; i < configuration.parallelization.workers; i++) {
-      auto context = std::make_unique<llvm::LLVMContext>();
-      tasks.emplace_back(diagnostics, *context);
-      contexts.push_back(std::move(context));
-    }
-    std::vector<std::unique_ptr<mull::Bitcode>> bitcode;
-    mull::TaskExecutor<mull_xctest::LoadBitcodeFromBufferTask> loadExecutor(
-        diagnostics, "Loading bitcode files", bitcodeBuffers, bitcode, std::move(tasks));
-    loadExecutor.execute();
-
-    mull::Program program(std::move(bitcode));
-    mull::Toolchain toolchain(diagnostics, configuration);
-    mull::Filters filters;
-    mull::MutatorsFactory factory(diagnostics);
-    
-    mull::MutationsFinder mutationsFinder(factory.mutators({}), configuration);
-
-    mull::Driver driver(diagnostics, configuration, program, toolchain, filters, mutationsFinder);
-    auto result = driver.run();
+    mull_xctest::LinkerInvocation invocation(inputObjects, diagnostics, configuration);
+    invocation.run();
     llvm::llvm_shutdown();
     return 0;
 }
