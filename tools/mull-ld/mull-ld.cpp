@@ -26,9 +26,9 @@
 #include <string>
 #include <unistd.h>
 
-void extractBitcodeFiles(std::vector<const char *> args,
+void extractBitcodeFiles(std::vector<std::string> &args,
                          std::vector<llvm::StringRef> &bitcodeFiles) {
-    for (const auto rawArg : args) {
+    for (const auto &rawArg : args) {
         llvm::StringRef arg(rawArg);
         if (arg.endswith(".o")) {
             bitcodeFiles.push_back(arg);
@@ -45,26 +45,41 @@ static void validateInputFiles(const std::vector<llvm::StringRef> &inputFiles) {
     }
 }
 
+static void validateConfiguration(const mull::Configuration &configuration, mull::Diagnostics &diags) {
+    if (configuration.linker.empty()) {
+        diags.error("No linker specified. Please set MULL_XCTEST_LINKER environment variable.");
+    }
+}
+
 int main(int argc, char **argv) {
     mull::Diagnostics diagnostics;
     std::vector<llvm::StringRef> inputObjects;
     std::vector<std::unique_ptr<llvm::MemoryBuffer>> bitcodeBuffers;
 
     std::vector<std::string> args(argv + 1, argv + argc);
+    extractBitcodeFiles(args, inputObjects);
+    validateInputFiles(inputObjects);
 
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
 
+    mull::Filters filters;
     mull::Configuration configuration;
     // FIXME: Link input objects with real linker
     configuration.executable = "echo";
-    configuration.linker = "/Applications/Xcode-12.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang";
+    configuration.linker = getenv("MULL_XCTEST_LINKER");
     configuration.debugEnabled = true;
     configuration.linkerTimeout = mull::MullDefaultLinkerTimeoutMilliseconds;
     configuration.timeout = mull::MullDefaultTimeoutMilliseconds;
+    diagnostics.enableDebugMode();
 
-    mull_xctest::LinkerInvocation invocation(inputObjects, args, diagnostics, configuration);
+    validateConfiguration(configuration, diagnostics);
+    mull::MutatorsFactory factory(diagnostics);
+    mull::MutationsFinder mutationsFinder(factory.mutators({"cxx_comparison"}), configuration);
+
+    mull_xctest::LinkerInvocation invocation(inputObjects, filters, mutationsFinder,
+                                             args, diagnostics, configuration);
     invocation.run();
     llvm::llvm_shutdown();
     return 0;

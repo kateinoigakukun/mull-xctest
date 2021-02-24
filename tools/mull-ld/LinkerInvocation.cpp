@@ -1,8 +1,6 @@
 #include "LinkerInvocation.h"
-#include <mull/FunctionUnderTest.h>
 #include <mull/Program/Program.h>
 #include <mull/Mutant.h>
-#include <mull/MutationsFinder.h>
 #include <mull/Mutators/MutatorsFactory.h>
 #include <mull/Parallelization/TaskExecutor.h>
 #include <mull/Parallelization/Parallelization.h>
@@ -54,6 +52,7 @@ void LinkerInvocation::run() {
         mapping[point->getUserIdentifier()].push_back(point);
       }
       for (auto &pair : mapping) {
+        diagnostics.debug("mutant_identifier = " + pair.first);
         mutants.push_back(std::make_unique<Mutant>(pair.first, pair.second));
       }
       std::sort(std::begin(mutants), std::end(mutants), MutantComparator());
@@ -81,15 +80,27 @@ void LinkerInvocation::run() {
 }
 
 std::vector<MutationPoint *> LinkerInvocation::findMutationPoints(Program &program) {
-    mull::MutatorsFactory factory(diagnostics);
-    mull::MutationsFinder mutationsFinder(factory.mutators({}), config);
     std::vector<FunctionUnderTest> functionsUnderTest;
     for (auto &bitcode : program.bitcode()) {
       for (llvm::Function &function : *bitcode->getModule()) {
         functionsUnderTest.emplace_back(&function, bitcode.get());
       }
     }
-    return mutationsFinder.getMutationPoints(diagnostics, program, functionsUnderTest);
+    selectInstructions(functionsUnderTest);
+    return std::move(mutationsFinder.getMutationPoints(diagnostics, program, functionsUnderTest));
+}
+
+void LinkerInvocation::selectInstructions(std::vector<FunctionUnderTest> &functions) {
+  std::vector<InstructionSelectionTask> tasks;
+  tasks.reserve(config.parallelization.workers);
+  for (int i = 0; i < config.parallelization.workers; i++) {
+    tasks.emplace_back(filters.instructionFilters);
+  }
+
+  std::vector<int> Nothing;
+  TaskExecutor<InstructionSelectionTask> filterRunner(
+      diagnostics, "Instruction selection", functions, Nothing, std::move(tasks));
+  filterRunner.execute();
 }
 
 void LinkerInvocation::applyMutation(Program &program, std::vector<MutationPoint *> &mutationPoints) {
@@ -142,10 +153,10 @@ void LinkerInvocation::link(std::vector<std::string> objectFiles) {
         arguments.push_back(*it);
     }
     ExecutionResult result =
-        runner.runProgram(config.linker, originalArgs, {}, config.linkerTimeout, true);
+        runner.runProgram(config.linker, arguments, {}, config.linkerTimeout, true);
     std::stringstream commandStream;
     commandStream << config.linker;
-    for (std::string &argument : originalArgs) {
+    for (std::string &argument : arguments) {
       commandStream << ' ' << argument;
     }
     std::string command = commandStream.str();
