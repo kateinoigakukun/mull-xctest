@@ -50,9 +50,7 @@ int main(int argc, char **argv) {
     std::vector<llvm::StringRef> inputObjects;
     std::vector<std::unique_ptr<llvm::MemoryBuffer>> bitcodeBuffers;
 
-    std::vector<const char *> args(&argv[0], &argv[argc]);
-    extractBitcodeFiles(args, inputObjects);
-    validateInputFiles(inputObjects);
+    std::vector<std::string> args(argv + 1, argv + argc);
 
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
@@ -66,7 +64,7 @@ int main(int argc, char **argv) {
     configuration.linkerTimeout = mull::MullDefaultLinkerTimeoutMilliseconds;
     configuration.timeout = mull::MullDefaultTimeoutMilliseconds;
 
-    mull_xctest::LinkerInvocation invocation(inputObjects, diagnostics, configuration);
+    mull_xctest::LinkerInvocation invocation(inputObjects, args, diagnostics, configuration);
     invocation.run();
     llvm::llvm_shutdown();
     return 0;

@@ -7,9 +7,11 @@
 #include <mull/Parallelization/TaskExecutor.h>
 #include <mull/Parallelization/Parallelization.h>
 #include <mull/Toolchain/Toolchain.h>
+#include <mull/Toolchain/Runner.h>
 #include "MullXCTest/Tasks/ExtractEmbeddedFileTask.h"
 #include "MullXCTest/Tasks/LoadBitcodeFromBufferTask.h"
 #include <string>
+#include <sstream>
 #include <unordered_map>
 
 using namespace mull_xctest;
@@ -75,10 +77,7 @@ void LinkerInvocation::run() {
                                                          std::move(compilationTasks));
     mutantCompiler.execute();
 
-    std::string executable;
-    singleTask.execute("Link mutated program",
-                       [&]() { executable = toolchain.linker().linkObjectFiles(objectFiles); });
-
+    link(objectFiles);
 }
 
 std::vector<MutationPoint *> LinkerInvocation::findMutationPoints(Program &program) {
@@ -130,4 +129,36 @@ void LinkerInvocation::applyMutation(Program &program, std::vector<MutationPoint
     TaskExecutor<ApplyMutationTask> applyMutations(
         diagnostics, "Applying mutations", mutationPoints, Nothing, { ApplyMutationTask() });
     applyMutations.execute();
+}
+
+void LinkerInvocation::link(std::vector<std::string> objectFiles) {
+    Runner runner(diagnostics);
+    std::vector<std::string> arguments;
+    std::copy(std::begin(objectFiles), std::end(objectFiles), std::back_inserter(arguments));
+    for (auto it = originalArgs.begin(); it != originalArgs.end(); ++it) {
+        if (llvm::StringRef(*it).endswith(".o")) {
+            continue;
+        }
+        arguments.push_back(*it);
+    }
+    ExecutionResult result =
+        runner.runProgram(config.linker, originalArgs, {}, config.linkerTimeout, true);
+    std::stringstream commandStream;
+    commandStream << config.linker;
+    for (std::string &argument : originalArgs) {
+      commandStream << ' ' << argument;
+    }
+    std::string command = commandStream.str();
+    if (result.status != Passed) {
+      std::stringstream message;
+      message << "Cannot link program\n";
+      message << "status: " << result.getStatusAsString() << "\n";
+      message << "time: " << result.runningTime << "ms\n";
+      message << "exit: " << result.exitStatus << "\n";
+      message << "command: " << command << "\n";
+      message << "stdout: " << result.stdoutOutput << "\n";
+      message << "stderr: " << result.stderrOutput << "\n";
+      diagnostics.error(message.str());
+    }
+    diagnostics.debug("Link command: " + command);
 }
