@@ -7,33 +7,46 @@
 #include "ebc/BitcodeRetriever.h"
 #include "ebc/BitcodeContainer.h"
 #include <vector>
+#include <sstream>
+#include <reproc++/drain.hpp>
+#include <reproc++/reproc.hpp>
+
+using namespace llvm::cl;
+
+opt<std::string> InputFile(
+  Positional,
+  desc("<input file>"),
+  Required,
+  value_desc("path"));
+
+list<std::string> ActiveMutant(
+  "active-mutant",
+  desc("Active mutant identifiers"),
+  ZeroOrMore,
+  value_desc("identifier"));
 
 int main(int argc, char **argv) {
-    mull::Diagnostics diagnostics;
-    llvm::cl::SetVersionPrinter(mull::printVersionInformation);
     bool validOptions = llvm::cl::ParseCommandLineOptions(argc, argv, "", &llvm::errs());
+    if (!validOptions) {
+      return 1;
+    }
 
-    std::vector<std::unique_ptr<ebc::EmbeddedFile>> embeddedFiles;
+    mull::Diagnostics diagnostics;
+    reproc::process process;
+    auto executable = "/Applications/Xcode-12.4.app/Contents/Developer/usr/bin/xctest";
 
-    mull::SingleTaskExecutor extractBitcodeBuffers(diagnostics);
-    extractBitcodeBuffers.execute("Extracting bitcode from executable", [&] {
-        ebc::BitcodeRetriever bitcodeRetriever("");
-        for (auto &bitcodeInfo : bitcodeRetriever.GetBitcodeInfo())
-        {
-            auto &container = bitcodeInfo.bitcodeContainer;
-            if (container)
-            {
-                for (auto &file : container->GetRawEmbeddedFiles())
-                {
-                    embeddedFiles.push_back(std::move(file));
-                }
-            }
-            else
-            {
-                diagnostics.warning(std::string("No bitcode: ") + bitcodeInfo.arch);
-            }
-        }
-    });
+    std::vector<std::string> allArguments{ executable, InputFile };
+    std::vector<std::pair<std::string, std::string>> env;
+    env.reserve(ActiveMutant.size());
+    for (auto &identifier : ActiveMutant) {
+      env.emplace_back(identifier, "1");
+    }
+    reproc::options options;
+    options.env.extra = reproc::env(env);
 
-    return 0;
+    std::error_code ec = process.start(allArguments, options);
+    int status;
+    std::tie(status, ec) = process.wait(reproc::milliseconds(10000));
+
+    return status;
 }
