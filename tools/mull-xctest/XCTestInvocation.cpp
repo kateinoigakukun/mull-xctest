@@ -1,13 +1,13 @@
 #include "XCTestInvocation.h"
+#include <llvm/Object/Binary.h>
 #include <llvm/Object/MachO.h>
 #include <llvm/Object/MachOUniversal.h>
-#include <llvm/Object/Binary.h>
 #include <llvm/Support/Path.h>
 #include <mull/MutationResult.h>
-#include <mull/Toolchain/Runner.h>
 #include <mull/Parallelization/Parallelization.h>
-#include <sstream>
+#include <mull/Toolchain/Runner.h>
 #include <set>
+#include <sstream>
 
 using namespace llvm;
 using namespace mull;
@@ -20,13 +20,14 @@ public:
   using Out = std::vector<std::unique_ptr<MutationResult>>;
   using iterator = In::const_iterator;
 
-  MutantExecutionTask(const Configuration &configuration, Diagnostics &diagnostics,
-                      const std::string executable, const std::string testBundle,
-                      ExecutionResult &baseline)
-  : configuration(configuration), diagnostics(diagnostics), executable(executable),
-    testBundle(testBundle), baseline(baseline) {}
+  MutantExecutionTask(const Configuration &configuration,
+                      Diagnostics &diagnostics, const std::string executable,
+                      const std::string testBundle, ExecutionResult &baseline)
+      : configuration(configuration), diagnostics(diagnostics),
+        executable(executable), testBundle(testBundle), baseline(baseline) {}
 
-  void operator()(iterator begin, iterator end, Out &storage, progress_counter &counter);
+  void operator()(iterator begin, iterator end, Out &storage,
+                  progress_counter &counter);
 
 private:
   const Configuration &configuration;
@@ -36,17 +37,16 @@ private:
   ExecutionResult &baseline;
 };
 
-void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage, progress_counter &counter) {
+void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
+                                     progress_counter &counter) {
   Runner runner(diagnostics);
   for (auto it = begin; it != end; ++it, counter.increment()) {
     auto &mutant = *it;
     ExecutionResult result;
     if (mutant->isCovered()) {
-      result = runner.runProgram(executable,
-                                 {"xctest", testBundle},
-                                 { mutant->getIdentifier() },
-                                 baseline.runningTime * 10,
-                                 configuration.captureMutantOutput);
+      result = runner.runProgram(
+          executable, {"xctest", testBundle}, {mutant->getIdentifier()},
+          baseline.runningTime * 10, configuration.captureMutantOutput);
     } else {
       result.status = NotCovered;
     }
@@ -61,12 +61,14 @@ std::unique_ptr<Result> XCTestInvocation::run() {
   Runner runner(diagnostics);
 
   singleTask.execute("Warm up run", [&]() {
-    runner.runProgram(xcrun, {xctest, testBundle.str()}, {}, config.timeout, config.captureMutantOutput);
+    runner.runProgram(xcrun, {xctest, testBundle.str()}, {}, config.timeout,
+                      config.captureMutantOutput);
   });
 
   ExecutionResult baseline;
   singleTask.execute("Baseline run", [&]() {
-    baseline = runner.runProgram(xcrun, {xctest, testBundle.str()}, {}, config.timeout, config.captureMutantOutput);
+    baseline = runner.runProgram(xcrun, {xctest, testBundle.str()}, {},
+                                 config.timeout, config.captureMutantOutput);
   });
 
   std::vector<std::unique_ptr<MutationResult>> mutationResults;
@@ -75,8 +77,9 @@ std::unique_ptr<Result> XCTestInvocation::run() {
   for (int i = 0; i < config.parallelization.mutantExecutionWorkers; i++) {
     tasks.emplace_back(config, diagnostics, xcrun, testBundle.str(), baseline);
   }
-  TaskExecutor<MutantExecutionTask> mutantRunner(
-      diagnostics, "Running mutants", mutants, mutationResults, std::move(tasks));
+  TaskExecutor<MutantExecutionTask> mutantRunner(diagnostics, "Running mutants",
+                                                 mutants, mutationResults,
+                                                 std::move(tasks));
   mutantRunner.execute();
 
   std::vector<MutationPoint *> filteredMutations{};
@@ -104,62 +107,56 @@ static SourceLocation parseSourceLoc(const std::string &identifier) {
   int column;
   while (!str.empty()) {
     switch (index) {
-      case 0: {
-        break;
-      }
-      case 1: {
-        file = left;
-        break;
-      }
-      case 2: {
-        line = std::stoi(left.str());
-        break;
-      }
-      default: {
-        llvm_unreachable("index should be < 3");
-      }
-        
+    case 0: {
+      break;
+    }
+    case 1: {
+      file = left;
+      break;
+    }
+    case 2: {
+      line = std::stoi(left.str());
+      break;
+    }
+    default: {
+      llvm_unreachable("index should be < 3");
+    }
     }
     index += 1;
     std::tie(left, str) = str.split(":");
   }
-  
+
   assert(index == 3);
   column = std::stoi(left.str());
   StringRef directory, filename;
   std::tie(directory, filename) = file.rsplit("/");
-  return SourceLocation(directory.str(), file.str(),
-                        directory.str(), file.str(), line, column);
+  return SourceLocation(directory.str(), file.str(), directory.str(),
+                        file.str(), line, column);
 }
-
 
 class RestoredMutator : public mull::Mutator {
 public:
   std::string identifier;
   RestoredMutator(std::string identifier) : identifier(identifier) {}
-  std::string getUniqueIdentifier() override {
-    return identifier;
-  }
-  std::string getUniqueIdentifier() const override {
-    return identifier;
-  }
+  std::string getUniqueIdentifier() override { return identifier; }
+  std::string getUniqueIdentifier() const override { return identifier; }
   mull::MutatorKind mutatorKind() override {
     return mull::MutatorKind::ScalarValueMutator;
   }
-  std::string getDescription() const override {
-    return "no description";
-  }
-  std::vector<MutationPoint *> getMutations(Bitcode *bitcode, const FunctionUnderTest &function) override {
+  std::string getDescription() const override { return "no description"; }
+  std::vector<MutationPoint *>
+  getMutations(Bitcode *bitcode, const FunctionUnderTest &function) override {
     return {};
   }
-  void applyMutation(llvm::Function *function, const MutationPointAddress &address, irm::IRMutation *lowLevelMutation) override {}
+  void applyMutation(llvm::Function *function,
+                     const MutationPointAddress &address,
+                     irm::IRMutation *lowLevelMutation) override {}
 };
 
+std::vector<std::unique_ptr<mull::Mutant>> XCTestInvocation::extractMutantInfo(
+    std::vector<std::unique_ptr<mull::Mutator>> &mutators,
+    std::vector<std::unique_ptr<mull::MutationPoint>> &allPoints) {
 
-std::vector<std::unique_ptr<mull::Mutant>>
-XCTestInvocation::extractMutantInfo(std::vector<std::unique_ptr<mull::Mutator>> &mutators,
-                                    std::vector<std::unique_ptr<mull::MutationPoint>> &allPoints) {
-  
   auto filename = llvm::sys::path::filename(testBundle);
   auto basename = filename.rsplit(".").first;
   SmallString<64> binaryPath(testBundle);
@@ -168,49 +165,52 @@ XCTestInvocation::extractMutantInfo(std::vector<std::unique_ptr<mull::Mutator>> 
   auto binaryOrErr = object::createBinary(binaryPath);
   if (!binaryOrErr) {
     std::stringstream errorMessage;
-    errorMessage << "createBinary failed: \"" << toString(binaryOrErr.takeError()) << "\".";
+    errorMessage << "createBinary failed: \""
+                 << toString(binaryOrErr.takeError()) << "\".";
     diagnostics.error(errorMessage.str());
     return {};
   }
-  const auto *machOObjectFile = dyn_cast<object::MachOObjectFile>(binaryOrErr->getBinary());
+  const auto *machOObjectFile =
+      dyn_cast<object::MachOObjectFile>(binaryOrErr->getBinary());
   if (!machOObjectFile) {
     diagnostics.error("input file is not mach-o object file");
     return {};
   }
-  Expected<object::SectionRef> section = machOObjectFile->getSection("__mull_mutants");
+  Expected<object::SectionRef> section =
+      machOObjectFile->getSection("__mull_mutants");
   if (!section) {
     llvm::consumeError(section.takeError());
     return {};
   }
-  
+
   Expected<StringRef> contentsData = section->getContents();
   if (!contentsData) {
     std::stringstream errorMessage;
-    errorMessage << "section->getContents failed: \"" << toString(contentsData.takeError()) << "\".";
+    errorMessage << "section->getContents failed: \""
+                 << toString(contentsData.takeError()) << "\".";
     diagnostics.error(errorMessage.str());
   }
   llvm::SmallVector<llvm::StringRef, 32> splitIds;
   contentsData->split(splitIds, llvm::StringRef("\0", 1), -1,
                       /*KeepEmpty=*/false);
   std::sort(splitIds.begin(), splitIds.end());
-  
+
   std::vector<std::unique_ptr<mull::Mutant>> mutants;
   auto uniqueTail = std::unique(splitIds.begin(), splitIds.end());
   for (auto it = splitIds.begin(); it != uniqueTail + 1; ++it) {
     auto mutatorIdentifier = parseMutatorId(it->str());
     auto loc = parseSourceLoc(it->str());
-    if (loc.isNull()) continue;
+    if (loc.isNull())
+      continue;
     mutators.push_back(std::make_unique<RestoredMutator>(mutatorIdentifier));
     std::vector<mull::MutationPoint *> points;
-    allPoints.push_back(std::make_unique<MutationPoint>(mutators.back().get(),
-                                                        "<dummy_replacement>",
-                                                        it->str(),
-                                                        loc,
-                                                        "dummy_diagnostics"));
+    allPoints.push_back(std::make_unique<MutationPoint>(
+        mutators.back().get(), "<dummy_replacement>", it->str(), loc,
+        "dummy_diagnostics"));
     points.push_back(allPoints.back().get());
     mutants.push_back(std::make_unique<Mutant>(it->str(), points));
   }
   return std::move(mutants);
 }
 
-};
+}; // namespace mull_xctest
