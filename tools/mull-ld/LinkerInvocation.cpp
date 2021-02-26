@@ -8,6 +8,7 @@
 #include <mull/Toolchain/Runner.h>
 #include "MullXCTest/Tasks/ExtractEmbeddedFileTask.h"
 #include "MullXCTest/Tasks/LoadBitcodeFromBufferTask.h"
+#include "MullXCTest/Tasks/EmbedMutantInfoTask.h"
 #include <string>
 #include <sstream>
 #include <unordered_map>
@@ -52,7 +53,6 @@ void LinkerInvocation::run() {
         mapping[point->getUserIdentifier()].push_back(point);
       }
       for (auto &pair : mapping) {
-        diagnostics.debug("mutant_identifier = " + pair.first);
         mutants.push_back(std::make_unique<Mutant>(pair.first, pair.second));
       }
       std::sort(std::begin(mutants), std::end(mutants), MutantComparator());
@@ -61,7 +61,7 @@ void LinkerInvocation::run() {
     // Step 4. Apply mutations
     applyMutation(program, mutationPoints);
 
-    // Step 5. Compile LLVM modules and link them
+    // Step 5. Compile LLVM modules to object files
     mull::Toolchain toolchain(diagnostics, config);
     std::vector<OriginalCompilationTask> compilationTasks;
     compilationTasks.reserve(workers);
@@ -76,6 +76,7 @@ void LinkerInvocation::run() {
                                                          std::move(compilationTasks));
     mutantCompiler.execute();
 
+    // Step 6. Link compiled object files with real linker
     link(objectFiles);
 }
 
@@ -111,16 +112,24 @@ void LinkerInvocation::applyMutation(Program &program, std::vector<MutationPoint
     });
 
     auto workers = config.parallelization.workers;
-    std::vector<int> devNull;
+
+    std::vector<int> Nothing;
+    TaskExecutor<EmbedMutantInfoTask> embedMutantInfo(
+        diagnostics,
+        "Embedding mutation information",
+        program.bitcode(),
+        Nothing,
+        std::vector<EmbedMutantInfoTask>(workers));
+    embedMutantInfo.execute();
+
     TaskExecutor<CloneMutatedFunctionsTask> cloneFunctions(
         diagnostics,
         "Cloning functions for mutation",
         program.bitcode(),
-        devNull,
+        Nothing,
         std::vector<CloneMutatedFunctionsTask>(workers));
     cloneFunctions.execute();
 
-    std::vector<int> Nothing;
     TaskExecutor<DeleteOriginalFunctionsTask> deleteOriginalFunctions(
         diagnostics,
         "Removing original functions",

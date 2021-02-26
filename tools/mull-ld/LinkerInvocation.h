@@ -1,12 +1,5 @@
-//
-//  LInkerInvocation.hpp
-//  mull-ld
-//
-//  Created by kateinoigakukun on 2021/02/24.
-//
-
-#ifndef LInkerInvocation_hpp
-#define LInkerInvocation_hpp
+#ifndef LinkerInvocation_h
+#define LinkerInvocation_h
 
 #include <mull/MutationPoint.h>
 #include <mull/Diagnostics/Diagnostics.h>
@@ -50,4 +43,4 @@ private:
 };
 }
 
-#endif /* LInkerInvocation_hpp */
+#endif

@@ -3,6 +3,7 @@
 #include "mull/Diagnostics/Diagnostics.h"
 #include "mull/Parallelization/Tasks/LoadBitcodeFromBinaryTask.h"
 #include "mull/Parallelization/TaskExecutor.h"
+#include <mull/Reporters/IDEReporter.h>
 #include "ebc/EmbeddedFile.h"
 #include "ebc/BitcodeRetriever.h"
 #include "ebc/BitcodeContainer.h"
@@ -10,8 +11,10 @@
 #include <sstream>
 #include <reproc++/drain.hpp>
 #include <reproc++/reproc.hpp>
+#include "XCTestInvocation.h"
 
 using namespace llvm::cl;
+using namespace llvm;
 
 opt<std::string> InputFile(
   Positional,
@@ -26,27 +29,25 @@ list<std::string> ActiveMutant(
   value_desc("identifier"));
 
 int main(int argc, char **argv) {
-    bool validOptions = llvm::cl::ParseCommandLineOptions(argc, argv, "", &llvm::errs());
-    if (!validOptions) {
-      return 1;
-    }
+  bool validOptions = llvm::cl::ParseCommandLineOptions(argc, argv, "", &llvm::errs());
+  if (!validOptions) {
+    return 1;
+  }
+  
+  mull::Diagnostics diagnostics;
+  mull::Configuration configuration;
+  // FIXME: Link input objects with real linker
+  configuration.executable = "echo";
+  configuration.linker = getenv("MULL_XCTEST_LINKER");
+  configuration.debugEnabled = true;
+  configuration.linkerTimeout = mull::MullDefaultLinkerTimeoutMilliseconds;
+  configuration.timeout = mull::MullDefaultTimeoutMilliseconds;
+  configuration.parallelization = mull::ParallelizationConfig::defaultConfig();
+  diagnostics.enableDebugMode();
 
-    mull::Diagnostics diagnostics;
-    reproc::process process;
-    auto executable = "/Applications/Xcode-12.4.app/Contents/Developer/usr/bin/xctest";
-
-    std::vector<std::string> allArguments{ executable, InputFile };
-    std::vector<std::pair<std::string, std::string>> env;
-    env.reserve(ActiveMutant.size());
-    for (auto &identifier : ActiveMutant) {
-      env.emplace_back(identifier, "1");
-    }
-    reproc::options options;
-    options.env.extra = reproc::env(env);
-
-    std::error_code ec = process.start(allArguments, options);
-    int status;
-    std::tie(status, ec) = process.wait(reproc::milliseconds(10000));
-
-    return status;
+  mull_xctest::XCTestInvocation invocation(InputFile, diagnostics, configuration);
+  mull::IDEReporter reporter(diagnostics);
+  auto results = invocation.run();
+  reporter.reportResults(*results);
+  return 0;
 }
