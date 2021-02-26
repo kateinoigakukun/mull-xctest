@@ -4,7 +4,7 @@ add_executable(mull-ld
   LinkerInvocation.cpp
   LinkerInvocation.h)
 target_link_libraries(mull-ld mull ebc json11 MullVersion mullXCTest ${llvm_libs})
-add_custom_target(ld
+add_custom_target(ld ALL
   COMMAND ${CMAKE_COMMAND}
     -E create_symlink $<TARGET_FILE:mull-ld> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ld
   DEPENDS mull-ld)
