@@ -23,4 +23,9 @@ jobs:
           -DPATH_TO_LLVM="$LLVM_DIR" \
           -DCMAKE_CXX_FLAGS=-fno-rtti
         make all
-
+    - name: Test mull-xctest
+      run: |
+        set -ex
+        pip install lit
+        cd build
+        lit tests -v --path $PWD/bin
