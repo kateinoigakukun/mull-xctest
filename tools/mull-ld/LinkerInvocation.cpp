@@ -151,7 +151,8 @@ void LinkerInvocation::link(std::vector<std::string> objectFiles) {
   std::copy(std::begin(objectFiles), std::end(objectFiles),
             std::back_inserter(arguments));
   for (auto it = originalArgs.begin(); it != originalArgs.end(); ++it) {
-    if (llvm::StringRef(*it).endswith(".o")) {
+    llvm::StringRef str(*it);
+    if (str.endswith(".o") || str.equals("-bitcode_bundle")) {
       continue;
     }
     arguments.push_back(*it);

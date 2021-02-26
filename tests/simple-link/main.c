@@ -4,6 +4,4 @@
 
 int add(int a, int b);
 
-int main(void) {
-    return add(1, 3);
-}
+int main(void) { return add(1, 3); }

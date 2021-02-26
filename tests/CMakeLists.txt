@@ -1,1 +1,7 @@
+set(MULL_XCTEST_TARGET_SDK_PATH)
+set(MULL_XCTEST_BIN_PATH "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+execute_process(COMMAND
+    "/usr/bin/xcrun" "-sdk" "macosx" "-show-sdk-path"
+    OUTPUT_VARIABLE MULL_XCTEST_TARGET_SDK_PATH
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/lit.cfg.in" "${CMAKE_CURRENT_BINARY_DIR}/lit.cfg" @ONLY)

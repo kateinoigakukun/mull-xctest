@@ -1,4 +1,6 @@
 config.mull_xctest_source_dir = "@MULL_XCTEST_SOURCE_DIR@"
+config.target_sdk_path = "@MULL_XCTEST_TARGET_SDK_PATH@"
+config.mull_xctest_bin = "@MULL_XCTEST_BIN_PATH@"
 
 lit_config.load_config(
     config, os.path.join(config.mull_xctest_source_dir, "tests", "lit.cfg"))

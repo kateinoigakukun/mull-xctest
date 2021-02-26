@@ -22,6 +22,7 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
+#include <mull/Toolchain/Runner.h>
 #include <string>
 #include <unistd.h>
 #include <vector>
@@ -53,6 +54,24 @@ static void validateConfiguration(const mull::Configuration &configuration,
   }
 }
 
+llvm::Optional<std::string> getLinkerPath(mull::Diagnostics &diagnositcs) {
+  if (const auto env = getenv("MULL_XCTEST_LINKER")) {
+    return std::string(env);
+  }
+  mull::Runner runner(diagnositcs);
+  auto result =
+      runner.runProgram("/usr/bin/xcrun", {"-find", "ld"}, {}, -1, true);
+  if (result.status != mull::Passed) {
+    diagnositcs.error("failed to run xcrun");
+    return llvm::None;
+  }
+  std::string resultOutput = result.stdoutOutput;
+  if (resultOutput.back() == '\n') {
+    resultOutput.pop_back();
+  }
+  return resultOutput;
+}
+
 int main(int argc, char **argv) {
   mull::Diagnostics diagnostics;
   std::vector<llvm::StringRef> inputObjects;
@@ -70,7 +89,11 @@ int main(int argc, char **argv) {
   mull::Configuration configuration;
   // FIXME: Link input objects with real linker
   configuration.executable = "echo";
-  configuration.linker = getenv("MULL_XCTEST_LINKER");
+  if (const auto linker = getLinkerPath(diagnostics)) {
+    configuration.linker = linker.getValue();
+  } else {
+    diagnostics.error("no real linker found");
+  }
   configuration.debugEnabled = true;
   configuration.linkerTimeout = mull::MullDefaultLinkerTimeoutMilliseconds;
   configuration.timeout = mull::MullDefaultTimeoutMilliseconds;

@@ -26,9 +26,6 @@ int main(int argc, char **argv) {
   mull::Diagnostics diagnostics;
   mull::MutatorsFactory factory(diagnostics);
   mull::Configuration configuration;
-  // FIXME: Link input objects with real linker
-  configuration.executable = "echo";
-  configuration.linker = getenv("MULL_XCTEST_LINKER");
   configuration.debugEnabled = true;
   configuration.linkerTimeout = mull::MullDefaultLinkerTimeoutMilliseconds;
   configuration.timeout = mull::MullDefaultTimeoutMilliseconds;
