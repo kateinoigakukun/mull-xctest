@@ -1,5 +1,6 @@
 #include "MullXCTest/Tasks/EmbedMutantInfoTask.h"
 #include "MullXCTest/MutantSerialization.h"
+#include "MullXCTest/MutantMetadata.h"
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/ValueHandle.h>
 #include <mull/MutationPoint.h>
@@ -79,7 +80,7 @@ static void embedMutantInfo(Bitcode &bitcode) {
   auto *var = new llvm::GlobalVariable(*module, constantContent->getType(),
                                        true, llvm::GlobalValue::PrivateLinkage,
                                        constantContent, "_mull_mutants");
-  var->setSection("__DATA, __mull_mutants");
+  var->setSection(MULL_MUTANTS_INFO_SECTION);
   var->setAlignment(llvm::Align());
 
   llvm::SmallVector<llvm::WeakTrackingVH, 4> LLVMUsed;

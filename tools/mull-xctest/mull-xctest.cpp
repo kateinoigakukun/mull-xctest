@@ -12,10 +12,6 @@ using namespace llvm;
 opt<std::string> InputFile(Positional, desc("<input file>"), Required,
                            value_desc("path"));
 
-list<std::string> ActiveMutant("active-mutant",
-                               desc("Active mutant identifiers"), ZeroOrMore,
-                               value_desc("identifier"));
-
 int main(int argc, char **argv) {
   bool validOptions =
       llvm::cl::ParseCommandLineOptions(argc, argv, "", &llvm::errs());

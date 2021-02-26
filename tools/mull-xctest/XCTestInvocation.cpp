@@ -1,8 +1,8 @@
 #include "XCTestInvocation.h"
 #include "MullXCTest/MutantSerialization.h"
+#include "MullXCTest/MutantMetadata.h"
 #include <llvm/Object/Binary.h>
 #include <llvm/Object/MachO.h>
-#include <llvm/Object/MachOUniversal.h>
 #include <llvm/Support/Path.h>
 #include <mull/MutationResult.h>
 #include <mull/Parallelization/Parallelization.h>
@@ -91,7 +91,7 @@ std::unique_ptr<Result> XCTestInvocation::run() {
 
 std::vector<std::unique_ptr<mull::Mutant>> XCTestInvocation::extractMutantInfo(
     std::vector<std::unique_ptr<mull::Mutator>> &mutators,
-    std::vector<std::unique_ptr<mull::MutationPoint>> &allPoints) {
+    std::vector<std::unique_ptr<mull::MutationPoint>> &pointsOwner) {
 
   auto filename = llvm::sys::path::filename(testBundle);
   auto basename = filename.rsplit(".").first;
@@ -113,7 +113,7 @@ std::vector<std::unique_ptr<mull::Mutant>> XCTestInvocation::extractMutantInfo(
     return {};
   }
   Expected<object::SectionRef> section =
-      machOObjectFile->getSection("__mull_mutants");
+      machOObjectFile->getSection(MULL_MUTANTS_INFO_SECTION_NAME_STR);
   if (!section) {
     llvm::consumeError(section.takeError());
     return {};
@@ -127,10 +127,6 @@ std::vector<std::unique_ptr<mull::Mutant>> XCTestInvocation::extractMutantInfo(
     diagnostics.error(errorMessage.str());
   }
   MutantDeserializer deserializer(contentsData.get(), factory);
-  llvm::SmallVector<llvm::StringRef, 32> splitIds;
-  contentsData->split(splitIds, llvm::StringRef("\0", 1), -1,
-                      /*KeepEmpty=*/false);
-  std::sort(splitIds.begin(), splitIds.end());
 
   std::vector<std::unique_ptr<mull::Mutant>> mutants;
   while (!deserializer.isEOF()) {
@@ -144,9 +140,9 @@ std::vector<std::unique_ptr<mull::Mutant>> XCTestInvocation::extractMutantInfo(
       continue;
     }
     std::string id = point->getUserIdentifier();
-    allPoints.push_back(std::move(point));
+    pointsOwner.push_back(std::move(point));
     std::vector<mull::MutationPoint *> points;
-    points.push_back(allPoints.back().get());
+    points.push_back(pointsOwner.back().get());
     mutants.push_back(std::make_unique<Mutant>(id, points));
   }
   return std::move(mutants);
