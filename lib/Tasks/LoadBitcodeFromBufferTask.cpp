@@ -10,15 +10,19 @@
 
 namespace mull_xctest {
 
-void LoadBitcodeFromBufferTask::operator()(iterator begin, iterator end, Out &storage,
+void LoadBitcodeFromBufferTask::operator()(iterator begin, iterator end,
+                                           Out &storage,
                                            mull::progress_counter &counter) {
   for (auto it = begin; it != end; it++, counter.increment()) {
 
-    auto module = mull::loadModuleFromBuffer(context, *std::move(*it), diagnostics);
+    auto module =
+        mull::loadModuleFromBuffer(context, *std::move(*it), diagnostics);
 
     if (module == nullptr) {
-      diagnostics.warning("Bitcode module could not be loaded. Possible reason: the bitcode "
-                          "file could be built with a newer version of LLVM than is used by Mull.");
+      diagnostics.warning(
+          "Bitcode module could not be loaded. Possible reason: the bitcode "
+          "file could be built with a newer version of LLVM than is used by "
+          "Mull.");
       continue;
     }
 
@@ -34,4 +38,4 @@ void LoadBitcodeFromBufferTask::operator()(iterator begin, iterator end, Out &st
     storage.push_back(std::move(bitcode));
   }
 }
-} // namespace mull
+} // namespace mull_xctest

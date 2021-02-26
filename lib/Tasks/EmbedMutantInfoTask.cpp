@@ -20,25 +20,26 @@ static void collectGlobalList(llvm::Module &module,
     existing->eraseFromParent();
   }
 
-  std::for_each(list.begin(), list.end(),
-                [](const llvm::WeakTrackingVH &global) {
-    assert(!llvm::isa<llvm::GlobalValue>(global) ||
-           !llvm::cast<llvm::GlobalValue>(global)->isDeclaration() &&
-           "all globals in the 'used' list must be definitions");
-  });
+  std::for_each(
+      list.begin(), list.end(), [](const llvm::WeakTrackingVH &global) {
+        assert(!llvm::isa<llvm::GlobalValue>(global) ||
+               !llvm::cast<llvm::GlobalValue>(global)->isDeclaration() &&
+                   "all globals in the 'used' list must be definitions");
+      });
 }
 
-static void emitGlobalList(Module &module, ArrayRef<llvm::WeakTrackingVH> handles,
-               StringRef name, StringRef section,
-               llvm::GlobalValue::LinkageTypes linkage,
-               llvm::Type *eltTy,
-               bool isConstant) {
+static void emitGlobalList(Module &module,
+                           ArrayRef<llvm::WeakTrackingVH> handles,
+                           StringRef name, StringRef section,
+                           llvm::GlobalValue::LinkageTypes linkage,
+                           llvm::Type *eltTy, bool isConstant) {
   // Do nothing if the list is empty.
-  if (handles.empty()) return;
+  if (handles.empty())
+    return;
   auto alignment = module.getDataLayout().getPointerSize();
 
   // We have an array of value handles, but we need an array of constants.
-  SmallVector<llvm::Constant*, 8> elts;
+  SmallVector<llvm::Constant *, 8> elts;
   elts.reserve(handles.size());
   for (auto &handle : handles) {
     auto elt = cast<llvm::Constant>(&*handle);
@@ -49,47 +50,48 @@ static void emitGlobalList(Module &module, ArrayRef<llvm::WeakTrackingVH> handle
 
   auto varTy = llvm::ArrayType::get(eltTy, elts.size());
   auto init = llvm::ConstantArray::get(varTy, elts);
-  auto var = new llvm::GlobalVariable(module, varTy, isConstant, linkage,
-                                      init, name);
+  auto var =
+      new llvm::GlobalVariable(module, varTy, isConstant, linkage, init, name);
   var->setSection(section);
   var->setAlignment(llvm::MaybeAlign(alignment));
 }
 
 static void embedMutantInfo(Bitcode &bitcode) {
-    if (bitcode.getMutationPointsMap().empty()) return;
-    auto *module = bitcode.getModule();
+  if (bitcode.getMutationPointsMap().empty())
+    return;
+  auto *module = bitcode.getModule();
 
-    std::string entriesString;
-    std::set<std::string> entries;
-    for (auto pair : bitcode.getMutationPointsMap()) {
-        for (auto point : pair.second) {
-            if (entries.insert(point->getUserIdentifier()).second) {
-                entriesString += point->getUserIdentifier();
-                entriesString += '\0';
-            }
-        }
+  std::string entriesString;
+  std::set<std::string> entries;
+  for (auto pair : bitcode.getMutationPointsMap()) {
+    for (auto point : pair.second) {
+      if (entries.insert(point->getUserIdentifier()).second) {
+        entriesString += point->getUserIdentifier();
+        entriesString += '\0';
+      }
     }
+  }
 
-    auto constantContent = llvm::ConstantDataArray::getString(
-        module->getContext(), entriesString, /*AddNull=*/false);
-    auto *var =
-        new llvm::GlobalVariable(*module, constantContent->getType(),
-                                 true, llvm::GlobalValue::PrivateLinkage,
-                                 constantContent, "_mull_mutants");
-    var->setSection("__DATA, __mull_mutants");
-    var->setAlignment(llvm::Align());
+  auto constantContent = llvm::ConstantDataArray::getString(
+      module->getContext(), entriesString, /*AddNull=*/false);
+  auto *var = new llvm::GlobalVariable(*module, constantContent->getType(),
+                                       true, llvm::GlobalValue::PrivateLinkage,
+                                       constantContent, "_mull_mutants");
+  var->setSection("__DATA, __mull_mutants");
+  var->setAlignment(llvm::Align());
 
-    llvm::SmallVector<llvm::WeakTrackingVH, 4> LLVMUsed;
-    collectGlobalList(*module, LLVMUsed, "llvm.used");
-    LLVMUsed.push_back(var);
-    emitGlobalList(*module, LLVMUsed, "llvm.used", "llvm.metadata",
-                   llvm::GlobalValue::AppendingLinkage,
-                   llvm::Type::getInt8PtrTy(module->getContext()), false);
+  llvm::SmallVector<llvm::WeakTrackingVH, 4> LLVMUsed;
+  collectGlobalList(*module, LLVMUsed, "llvm.used");
+  LLVMUsed.push_back(var);
+  emitGlobalList(*module, LLVMUsed, "llvm.used", "llvm.metadata",
+                 llvm::GlobalValue::AppendingLinkage,
+                 llvm::Type::getInt8PtrTy(module->getContext()), false);
 }
 
-void EmbedMutantInfoTask::operator()(iterator begin, iterator end, Out &storage, mull::progress_counter &counter) {
-    for (auto it = begin; it != end; it++, counter.increment()) {
-        Bitcode &bitcode = **it;
-        embedMutantInfo(bitcode);
-    }
+void EmbedMutantInfoTask::operator()(iterator begin, iterator end, Out &storage,
+                                     mull::progress_counter &counter) {
+  for (auto it = begin; it != end; it++, counter.increment()) {
+    Bitcode &bitcode = **it;
+    embedMutantInfo(bitcode);
+  }
 }

@@ -15,7 +15,6 @@
 
 namespace mull_xctest {
 
-
 class EmbedMutantInfoTask {
 public:
   using In = std::vector<std::unique_ptr<mull::Bitcode>>;
@@ -24,11 +23,10 @@ public:
 
   EmbedMutantInfoTask() {}
 
-  void operator()(iterator begin, iterator end, Out &storage, mull::progress_counter &counter);
-
+  void operator()(iterator begin, iterator end, Out &storage,
+                  mull::progress_counter &counter);
 };
 
-}
-
+} // namespace mull_xctest
 
 #endif
