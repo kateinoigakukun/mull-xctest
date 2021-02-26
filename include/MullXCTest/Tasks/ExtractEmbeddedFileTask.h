@@ -1,10 +1,9 @@
 #ifndef MULL_XCTEST_TASKS_EXTRACT_EMBEDDED_FILE_TASK_H
 #define MULL_XCTEST_TASKS_EXTRACT_EMBEDDED_FILE_TASK_H
 
-#include "ebc/EmbeddedFile.h"
-#include "mull/Diagnostics/Diagnostics.h"
-#include "mull/Parallelization/Progress.h"
 #include <llvm/Support/MemoryBuffer.h>
+#include <mull/Diagnostics/Diagnostics.h>
+#include <mull/Parallelization/Progress.h>
 #include <vector>
 
 namespace mull_xctest {

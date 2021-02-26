@@ -1,10 +1,8 @@
 #include "MullXCTest/Tasks/LoadBitcodeFromBufferTask.h"
 
-#include "mull/BitcodeLoader.h"
-#include "mull/Diagnostics/Diagnostics.h"
-#include "mull/Parallelization/Progress.h"
-
-#include <ebc/EmbeddedFile.h>
+#include <mull/BitcodeLoader.h>
+#include <mull/Diagnostics/Diagnostics.h>
+#include <mull/Parallelization/Progress.h>
 
 #include <llvm/Support/MemoryBuffer.h>
 

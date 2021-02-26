@@ -1,11 +1,11 @@
 #ifndef MULL_XCTEST_TASKS_LOAD_BITCODE_FROM_BUFFER_TASK_H
 #define MULL_XCTEST_TASKS_LOAD_BITCODE_FROM_BUFFER_TASK_H
 
-#include "mull/Bitcode.h"
-#include "mull/Diagnostics/Diagnostics.h"
-#include "mull/Parallelization/Progress.h"
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/Support/MemoryBuffer.h>
+#include <mull/Bitcode.h>
+#include <mull/Diagnostics/Diagnostics.h>
+#include <mull/Parallelization/Progress.h>
 #include <vector>
 
 namespace mull_xctest {

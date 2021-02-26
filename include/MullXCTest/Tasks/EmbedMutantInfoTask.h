@@ -8,9 +8,9 @@
 #ifndef MULL_XCTEST_TASKS_EMBED_MUTANT_INFO_TASK_H
 #define MULL_XCTEST_TASKS_EMBED_MUTANT_INFO_TASK_H
 
-#include "mull/Bitcode.h"
-#include "mull/Diagnostics/Diagnostics.h"
-#include "mull/Parallelization/Progress.h"
+#include <mull/Bitcode.h>
+#include <mull/Diagnostics/Diagnostics.h>
+#include <mull/Parallelization/Progress.h>
 #include <vector>
 
 namespace mull_xctest {

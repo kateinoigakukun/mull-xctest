@@ -1,17 +1,9 @@
-#include "llvm/Support/CommandLine.h"
-#include "mull/Version.h"
-#include "mull/Diagnostics/Diagnostics.h"
-#include "mull/Parallelization/Tasks/LoadBitcodeFromBinaryTask.h"
-#include "mull/Parallelization/TaskExecutor.h"
-#include <mull/Reporters/IDEReporter.h>
-#include "ebc/EmbeddedFile.h"
-#include "ebc/BitcodeRetriever.h"
-#include "ebc/BitcodeContainer.h"
-#include <vector>
-#include <sstream>
-#include <reproc++/drain.hpp>
-#include <reproc++/reproc.hpp>
 #include "XCTestInvocation.h"
+#include <llvm/Support/CommandLine.h>
+#include <mull/Diagnostics/Diagnostics.h>
+#include <mull/Reporters/IDEReporter.h>
+#include <mull/Version.h>
+#include <vector>
 
 using namespace llvm::cl;
 using namespace llvm;

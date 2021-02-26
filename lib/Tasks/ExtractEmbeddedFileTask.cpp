@@ -1,9 +1,7 @@
 #include "MullXCTest/Tasks/ExtractEmbeddedFileTask.h"
-#include "llvm/Object/Binary.h"
-#include "llvm/Object/MachO.h"
-#include "llvm/Object/MachOUniversal.h"
-#include <ebc/BitcodeContainer.h>
-#include <ebc/BitcodeRetriever.h>
+#include <llvm/Object/Binary.h>
+#include <llvm/Object/MachO.h>
+#include <llvm/Object/MachOUniversal.h>
 #include <sstream>
 
 using namespace llvm;
