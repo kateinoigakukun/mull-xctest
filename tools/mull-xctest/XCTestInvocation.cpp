@@ -1,4 +1,5 @@
 #include "XCTestInvocation.h"
+#include "MullXCTest/MutantSerialization.h"
 #include <llvm/Object/Binary.h>
 #include <llvm/Object/MachO.h>
 #include <llvm/Object/MachOUniversal.h>
@@ -190,25 +191,28 @@ std::vector<std::unique_ptr<mull::Mutant>> XCTestInvocation::extractMutantInfo(
                  << toString(contentsData.takeError()) << "\".";
     diagnostics.error(errorMessage.str());
   }
+  MutantDeserializer deserializer(contentsData.get(), factory);
   llvm::SmallVector<llvm::StringRef, 32> splitIds;
   contentsData->split(splitIds, llvm::StringRef("\0", 1), -1,
                       /*KeepEmpty=*/false);
   std::sort(splitIds.begin(), splitIds.end());
 
   std::vector<std::unique_ptr<mull::Mutant>> mutants;
-  auto uniqueTail = std::unique(splitIds.begin(), splitIds.end());
-  for (auto it = splitIds.begin(); it != uniqueTail + 1; ++it) {
-    auto mutatorIdentifier = parseMutatorId(it->str());
-    auto loc = parseSourceLoc(it->str());
-    if (loc.isNull())
+  while (!deserializer.isEOF()) {
+    std::unique_ptr<mull::MutationPoint> point = deserializer.deserialize();
+    if (!point) {
+      diagnostics.error("failed to deserialize mutants.");
+      break;
+    }
+    // FIXME: Filter compiler-generated code before modification
+    if (point->getSourceLocation().isNull()) {
       continue;
-    mutators.push_back(std::make_unique<RestoredMutator>(mutatorIdentifier));
+    }
+    std::string id = point->getUserIdentifier();
+    allPoints.push_back(std::move(point));
     std::vector<mull::MutationPoint *> points;
-    allPoints.push_back(std::make_unique<MutationPoint>(
-        mutators.back().get(), "<dummy_replacement>", it->str(), loc,
-        "dummy_diagnostics"));
     points.push_back(allPoints.back().get());
-    mutants.push_back(std::make_unique<Mutant>(it->str(), points));
+    mutants.push_back(std::make_unique<Mutant>(id, points));
   }
   return std::move(mutants);
 }

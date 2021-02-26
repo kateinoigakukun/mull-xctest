@@ -8,12 +8,14 @@
 #include <mull/MutationPoint.h>
 #include <mull/MutationResult.h>
 #include <mull/Mutators/Mutator.h>
+#include <mull/Mutators/MutatorsFactory.h>
 #include <mull/Parallelization/TaskExecutor.h>
 #include <mull/Result.h>
 
 namespace mull_xctest {
 class XCTestInvocation {
   const llvm::StringRef testBundle;
+  mull::MutatorsFactory &factory;
   mull::Diagnostics &diagnostics;
   const mull::Configuration &config;
   mull::SingleTaskExecutor singleTask;
@@ -22,10 +24,11 @@ class XCTestInvocation {
   std::vector<std::unique_ptr<mull::MutationPoint>> allPoints;
 
 public:
-  XCTestInvocation(llvm::StringRef testBundle, mull::Diagnostics &diagnostics,
+  XCTestInvocation(llvm::StringRef testBundle, mull::MutatorsFactory &factory,
+                   mull::Diagnostics &diagnostics,
                    const mull::Configuration &config)
-      : testBundle(testBundle), diagnostics(diagnostics), config(config),
-        singleTask(diagnostics) {}
+      : testBundle(testBundle), factory(factory), diagnostics(diagnostics),
+        config(config), singleTask(diagnostics) {}
   std::unique_ptr<mull::Result> run();
 
 private:

@@ -1,4 +1,5 @@
 #include "MullXCTest/Tasks/EmbedMutantInfoTask.h"
+#include "MullXCTest/MutantSerialization.h"
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/ValueHandle.h>
 #include <mull/MutationPoint.h>
@@ -62,12 +63,13 @@ static void embedMutantInfo(Bitcode &bitcode) {
   auto *module = bitcode.getModule();
 
   std::string entriesString;
+  llvm::raw_string_ostream stream(entriesString);
+  MutantSerializer serializer(stream);
   std::set<std::string> entries;
   for (auto pair : bitcode.getMutationPointsMap()) {
     for (auto point : pair.second) {
       if (entries.insert(point->getUserIdentifier()).second) {
-        entriesString += point->getUserIdentifier();
-        entriesString += '\0';
+        serializer.serialize(point);
       }
     }
   }

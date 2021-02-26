@@ -1,6 +1,7 @@
 #include "XCTestInvocation.h"
 #include <llvm/Support/CommandLine.h>
 #include <mull/Diagnostics/Diagnostics.h>
+#include <mull/Mutators/MutatorsFactory.h>
 #include <mull/Reporters/IDEReporter.h>
 #include <mull/Version.h>
 #include <vector>
@@ -23,6 +24,7 @@ int main(int argc, char **argv) {
   }
 
   mull::Diagnostics diagnostics;
+  mull::MutatorsFactory factory(diagnostics);
   mull::Configuration configuration;
   // FIXME: Link input objects with real linker
   configuration.executable = "echo";
@@ -33,7 +35,8 @@ int main(int argc, char **argv) {
   configuration.parallelization = mull::ParallelizationConfig::defaultConfig();
   diagnostics.enableDebugMode();
 
-  mull_xctest::XCTestInvocation invocation(InputFile, diagnostics,
+  factory.init();
+  mull_xctest::XCTestInvocation invocation(InputFile, factory, diagnostics,
                                            configuration);
   mull::IDEReporter reporter(diagnostics);
   auto results = invocation.run();
