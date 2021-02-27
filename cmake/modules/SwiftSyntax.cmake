@@ -11,6 +11,7 @@ ExternalProject_Add(SwiftSyntax
     "--product" "SwiftSyntax" "--configuration" "release"
     "--package-path" "<SOURCE_DIR>"
     "--build-path" "<BINARY_DIR>"
+  BUILD_BYPRODUCTS "<BINARY_DIR>/release/libSwiftSyntax.a"
 )
 
 ExternalProject_Get_property(SwiftSyntax BINARY_DIR)

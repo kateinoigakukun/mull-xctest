@@ -12,8 +12,8 @@ jobs:
         curl -sSfL https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/clang+llvm-11.0.0-x86_64-apple-darwin.tar.xz | tar xJf -
         export LLVM_DIR=$PWD/clang+llvm-11.0.0-x86_64-apple-darwin
         echo "LLVM_DIR=$LLVM_DIR" >> $GITHUB_ENV
-    - name: Install ccache
-      run: brew install ccache
+    - name: Install build tools
+      run: brew install ccache ninja
     - name: Prepare ccache timestamp
       id: ccache_cache_timestamp
       shell: cmake -P {0}
@@ -32,14 +32,14 @@ jobs:
         set -ex
         mkdir build
         cd build
-        cmake ../ \
+        cmake ../ -G Ninja \
           -DCMAKE_C_COMPILER="$LLVM_DIR/bin/clang" \
           -DCMAKE_CXX_COMPILER="$LLVM_DIR/bin/clang++" \
           -DCMAKE_Swift_COMPILER="$(xcrun -f swiftc)" \
           -DPATH_TO_LLVM="$LLVM_DIR" \
           -DCMAKE_CXX_FLAGS=-fno-rtti \
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-        make all
+        ninja all
       env:
         CCACHE_DIR: ${{ github.workspace }}/.ccache
     - name: Set up Python 2.7
