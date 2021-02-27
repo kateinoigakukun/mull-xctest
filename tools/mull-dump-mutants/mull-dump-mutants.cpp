@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
   }
 
   for (auto &mutant : mutants) {
-    llvm::dbgs() << mutant->getMutationPoints().front()->dump() << "\n";
+    llvm::outs() << mutant->getMutationPoints().front()->dump() << "\n";
   }
   return 0;
 }
