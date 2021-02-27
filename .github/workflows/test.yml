@@ -35,6 +35,7 @@ jobs:
         cmake ../ \
           -DCMAKE_C_COMPILER="$LLVM_DIR/bin/clang" \
           -DCMAKE_CXX_COMPILER="$LLVM_DIR/bin/clang++" \
+          -DCMAKE_Swift_COMPILER="$(xcrun -f swiftc)" \
           -DPATH_TO_LLVM="$LLVM_DIR" \
           -DCMAKE_CXX_FLAGS=-fno-rtti \
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
