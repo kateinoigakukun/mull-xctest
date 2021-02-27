@@ -16,3 +16,5 @@ add_library(mullXCTest STATIC
     ${mullXCTest_headers})
 
 target_link_libraries(mullXCTest mull ebc)
+
+add_subdirectory(SwiftFilters)
