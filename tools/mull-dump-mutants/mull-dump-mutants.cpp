@@ -1,15 +1,15 @@
 #include "MullXCTest/MutantMetadata.h"
 #include "MullXCTest/MutantSerialization.h"
+#include <llvm/Object/Binary.h>
+#include <llvm/Object/MachO.h>
 #include <llvm/Support/CommandLine.h>
 #include <mull/Diagnostics/Diagnostics.h>
+#include <mull/MutationPoint.h>
 #include <mull/Mutators/MutatorsFactory.h>
 #include <mull/Reporters/IDEReporter.h>
 #include <mull/Version.h>
-#include <mull/MutationPoint.h>
-#include <llvm/Object/Binary.h>
-#include <llvm/Object/MachO.h>
-#include <vector>
 #include <sstream>
+#include <vector>
 
 using namespace llvm::cl;
 using namespace llvm;
@@ -35,34 +35,35 @@ int main(int argc, char **argv) {
   if (!binaryOrErr) {
     std::stringstream errorMessage;
     errorMessage << "createBinary failed: \""
-    << toString(binaryOrErr.takeError()) << "\".";
+                 << toString(binaryOrErr.takeError()) << "\".";
     diagnostics.error(errorMessage.str());
     return 1;
   }
   const auto *machOObjectFile =
-  dyn_cast<object::MachOObjectFile>(binaryOrErr->getBinary());
+      dyn_cast<object::MachOObjectFile>(binaryOrErr->getBinary());
   if (!machOObjectFile) {
     diagnostics.error("input file is not mach-o object file");
     return 1;
   }
   auto sectionName = MULL_MUTANTS_INFO_SECTION_NAME_STR;
   Expected<object::SectionRef> section =
-  machOObjectFile->getSection(sectionName);
+      machOObjectFile->getSection(sectionName);
   if (!section) {
-    diagnostics.error("section " MULL_MUTANTS_INFO_SECTION_NAME_STR "not found");
+    diagnostics.error("section " MULL_MUTANTS_INFO_SECTION_NAME_STR
+                      "not found");
     llvm::consumeError(section.takeError());
     return 1;
   }
-  
+
   Expected<StringRef> contentsData = section->getContents();
   if (!contentsData) {
     std::stringstream errorMessage;
     errorMessage << "section->getContents failed: \""
-    << toString(contentsData.takeError()) << "\".";
+                 << toString(contentsData.takeError()) << "\".";
     diagnostics.error(errorMessage.str());
   }
   MutantDeserializer deserializer(contentsData.get(), factory);
-  
+
   std::vector<std::unique_ptr<mull::Mutant>> mutants;
   while (!deserializer.isEOF()) {
     std::unique_ptr<mull::MutationPoint> point = deserializer.deserialize();

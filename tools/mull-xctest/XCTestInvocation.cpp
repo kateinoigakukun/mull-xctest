@@ -1,6 +1,6 @@
 #include "XCTestInvocation.h"
-#include "MullXCTest/MutantSerialization.h"
 #include "MullXCTest/MutantMetadata.h"
+#include "MullXCTest/MutantSerialization.h"
 #include <llvm/Object/Binary.h>
 #include <llvm/Object/MachO.h>
 #include <llvm/Support/Path.h>

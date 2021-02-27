@@ -6,11 +6,11 @@
 #include <llvm/Support/TargetSelect.h>
 #include <mull/Config/Configuration.h>
 #include <mull/Diagnostics/Diagnostics.h>
-#include <mull/Filters/Filters.h>
+#include <mull/Filters/FilePathFilter.h>
 #include <mull/Filters/Filter.h>
+#include <mull/Filters/Filters.h>
 #include <mull/Filters/JunkMutationFilter.h>
 #include <mull/Filters/NoDebugInfoFilter.h>
-#include <mull/Filters/FilePathFilter.h>
 #include <mull/MutationsFinder.h>
 #include <mull/Mutators/MutatorsFactory.h>
 #include <mull/Parallelization/TaskExecutor.h>
@@ -23,19 +23,12 @@ using namespace llvm::cl;
 
 OptionCategory MullLDCategory("mull-ld");
 
-opt<std::string> Linker(
-    "linker",
-    desc("Linker program"),
-    value_desc("string"),
-    Optional,
-    cat(MullLDCategory));
+opt<std::string> Linker("linker", desc("Linker program"), value_desc("string"),
+                        Optional, cat(MullLDCategory));
 
-opt<bool> DebugEnabled(
-  "debug",
-  desc("Enables Debug Mode: more logs are printed"),
-  Optional,
-  init(false),
-  cat(MullLDCategory));
+opt<bool> DebugEnabled("debug",
+                       desc("Enables Debug Mode: more logs are printed"),
+                       Optional, init(false), cat(MullLDCategory));
 
 void extractBitcodeFiles(std::vector<std::string> &args,
                          std::vector<llvm::StringRef> &bitcodeFiles) {
@@ -59,8 +52,9 @@ static void validateInputFiles(const std::vector<llvm::StringRef> &inputFiles) {
 static void validateConfiguration(const mull::Configuration &configuration,
                                   mull::Diagnostics &diags) {
   if (configuration.linker.empty()) {
-    diags.error("No linker specified. Please set --linker option in MULL_XCTEST_ARGS"
-                "environment variable.");
+    diags.error(
+        "No linker specified. Please set --linker option in MULL_XCTEST_ARGS"
+        "environment variable.");
   }
 }
 
@@ -82,8 +76,9 @@ llvm::Optional<std::string> getLinkerPath(mull::Diagnostics &diagnositcs) {
   return resultOutput;
 }
 
-void bootstrapFilters(mull::Filters &filters,
-                      std::vector<std::unique_ptr<mull::Filter>> &filterStorage) {
+void bootstrapFilters(
+    mull::Filters &filters,
+    std::vector<std::unique_ptr<mull::Filter>> &filterStorage) {
   auto *noDebugInfoFilter = new mull::NoDebugInfoFilter;
   auto *filePathFilter = new mull::FilePathFilter;
   filterStorage.emplace_back(noDebugInfoFilter);
@@ -95,7 +90,6 @@ void bootstrapFilters(mull::Filters &filters,
 
   filters.mutationFilters.push_back(filePathFilter);
   filters.functionFilters.push_back(filePathFilter);
-
 }
 
 void bootstrapConfiguration(mull::Configuration &configuration,
@@ -116,7 +110,7 @@ int main(int argc, char **argv) {
   std::vector<std::unique_ptr<llvm::MemoryBuffer>> bitcodeBuffers;
 
   bool validOptions = llvm::cl::ParseCommandLineOptions(
-    1, argv, "", &llvm::errs(), "MULL_XCTEST_ARGS");
+      1, argv, "", &llvm::errs(), "MULL_XCTEST_ARGS");
   if (!validOptions) {
     return 1;
   }
