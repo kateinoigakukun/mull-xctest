@@ -1,4 +1,6 @@
 #include "LinkerInvocation.h"
+#include "MullXCTest/SwiftSupport/SyntaxMutationFinder.h"
+#include "MullXCTest/SwiftSupport/SyntaxMutationFilter.h"
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/CommandLine.h>
@@ -78,6 +80,7 @@ llvm::Optional<std::string> getLinkerPath(mull::Diagnostics &diagnositcs) {
 
 void bootstrapFilters(
     mull::Filters &filters,
+    mull::Diagnostics &diagnostics,
     std::vector<std::unique_ptr<mull::Filter>> &filterStorage) {
   auto *noDebugInfoFilter = new mull::NoDebugInfoFilter;
   auto *filePathFilter = new mull::FilePathFilter;
@@ -90,6 +93,15 @@ void bootstrapFilters(
 
   filters.mutationFilters.push_back(filePathFilter);
   filters.functionFilters.push_back(filePathFilter);
+
+  using namespace mull_xctest::swift;
+  SyntaxMutationFinder finder;
+  auto storage = std::make_unique<SourceStorage>();
+
+  auto *syntaxFilter = new SyntaxMutationFilter(diagnostics, std::move(storage));
+  filterStorage.emplace_back(syntaxFilter);
+
+  filters.mutationFilters.push_back(syntaxFilter);
 }
 
 void bootstrapConfiguration(mull::Configuration &configuration,
@@ -135,7 +147,7 @@ int main(int argc, char **argv) {
 
   validateConfiguration(configuration, diagnostics);
 
-  bootstrapFilters(filters, filterStorage);
+  bootstrapFilters(filters, diagnostics, filterStorage);
   mull::MutatorsFactory factory(diagnostics);
   mull::MutationsFinder mutationsFinder(factory.mutators({"cxx_comparison"}),
                                         configuration);

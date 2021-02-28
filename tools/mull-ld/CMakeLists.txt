@@ -5,7 +5,7 @@ add_executable(mull-ld
   LinkerInvocation.h)
 
 target_link_libraries(mull-ld
-  mullXCTest mullSwiftFilter
+  mullXCTest mullSwiftSupport
   mull MullVersion ebc json11
   ${llvm_libs})
 add_custom_target(ld ALL

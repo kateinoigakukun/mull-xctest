@@ -9,6 +9,7 @@
 #include <mull/Program/Program.h>
 #include <mull/Toolchain/Runner.h>
 #include <mull/Toolchain/Toolchain.h>
+#include <mull/Filters/MutationFilter.h>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -48,10 +49,11 @@ void LinkerInvocation::run() {
 
   // Step 3: Find mutation points from LLVM modules
   auto mutationPoints = findMutationPoints(program);
+  auto filteredMutations = filterMutations(std::move(mutationPoints));
   std::vector<std::unique_ptr<Mutant>> mutants;
   singleTask.execute("Deduplicate mutants", [&]() {
     std::unordered_map<std::string, std::vector<MutationPoint *>> mapping;
-    for (MutationPoint *point : mutationPoints) {
+    for (MutationPoint *point : filteredMutations) {
       mapping[point->getUserIdentifier()].push_back(point);
     }
     for (auto &pair : mapping) {
@@ -61,7 +63,7 @@ void LinkerInvocation::run() {
   });
 
   // Step 4. Apply mutations
-  applyMutation(program, mutationPoints);
+  applyMutation(program, filteredMutations);
 
   // Step 5. Compile LLVM modules to object files
   mull::Toolchain toolchain(diagnostics, config);
@@ -106,6 +108,28 @@ void LinkerInvocation::selectInstructions(
       diagnostics, "Instruction selection", functions, Nothing,
       std::move(tasks));
   filterRunner.execute();
+}
+
+std::vector<MutationPoint *>
+LinkerInvocation::filterMutations(std::vector<MutationPoint *> mutationPoints) {
+  std::vector<MutationPoint *> mutations = std::move(mutationPoints);
+
+  for (auto filter : filters.mutationFilters) {
+    std::vector<MutationFilterTask> tasks;
+    tasks.reserve(config.parallelization.workers);
+    for (int i = 0; i < config.parallelization.workers; i++) {
+      tasks.emplace_back(*filter);
+    }
+
+    std::string label = std::string("Applying filter: ") + filter->name();
+    std::vector<MutationPoint *> tmp;
+    TaskExecutor<MutationFilterTask> filterRunner(
+        diagnostics, label, mutations, tmp, std::move(tasks));
+    filterRunner.execute();
+    mutations = std::move(tmp);
+  }
+
+  return mutations;
 }
 
 void LinkerInvocation::applyMutation(
