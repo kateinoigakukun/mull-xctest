@@ -11,6 +11,7 @@ jobs:
       run: |
         brew install llvm
         echo "LLVM_DIR=/usr/local/opt/llvm" >> $GITHUB_ENV
+        echo "/usr/local/opt/llvm/bin" >> $GITHUB_PATH
     - name: Install build tools
       run: brew install ccache ninja
     - name: Prepare ccache timestamp
