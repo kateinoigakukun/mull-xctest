@@ -23,7 +23,7 @@ else()
         -parse-as-library
         -module-name MullSwiftSupportCore
         -o ${CMAKE_CURRENT_BINARY_DIR}/SwiftASTMutationFilter.swift.o
-        -runtime-compatibility-version 5.1
+        -runtime-compatibility-version 5.1 -g
         -I $<TARGET_PROPERTY:SwiftSyntax::SwiftSyntax,INTERFACE_INCLUDE_DIRECTORIES>
         -sdk ${CMAKE_OSX_SYSROOT}
         ${swift_sources})

@@ -72,7 +72,7 @@ llvm::Optional<std::string> getLinkerPath(mull::Diagnostics &diagnositcs) {
   }
   mull::Runner runner(diagnositcs);
   auto result =
-      runner.runProgram("/usr/bin/xcrun", {"-find", "ld"}, {}, -1, true);
+      runner.runProgram("/usr/bin/xcrun", {"-find", "ld"}, {}, 3000, true);
   if (result.status != mull::Passed) {
     diagnositcs.error("failed to run xcrun");
     return llvm::None;
@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
 
   bootstrapFilters(filters, diagnostics, filterStorage);
   mull::MutatorsFactory factory(diagnostics);
-  mull::MutationsFinder mutationsFinder(factory.mutators({"cxx_comparison"}),
+  mull::MutationsFinder mutationsFinder(factory.mutators({"cxx_comparison", "cxx_arithmetic"}),
                                         configuration);
 
   mull_xctest::LinkerInvocation invocation(
