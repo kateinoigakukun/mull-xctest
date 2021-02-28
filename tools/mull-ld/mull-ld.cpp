@@ -1,6 +1,6 @@
 #include "LinkerInvocation.h"
-#include "MullXCTest/SwiftSupport/SyntaxMutationFinder.h"
 #include "MullXCTest/SwiftSupport/SyntaxMutationFilter.h"
+#include "MullXCTest/SwiftSupport/SyntaxMutationFinder.h"
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/CommandLine.h>
@@ -79,8 +79,7 @@ llvm::Optional<std::string> getLinkerPath(mull::Diagnostics &diagnositcs) {
 }
 
 void bootstrapFilters(
-    mull::Filters &filters,
-    mull::Diagnostics &diagnostics,
+    mull::Filters &filters, mull::Diagnostics &diagnostics,
     std::vector<std::unique_ptr<mull::Filter>> &filterStorage) {
   auto *noDebugInfoFilter = new mull::NoDebugInfoFilter;
   auto *filePathFilter = new mull::FilePathFilter;
@@ -98,7 +97,8 @@ void bootstrapFilters(
   SyntaxMutationFinder finder;
   auto storage = std::make_unique<SourceStorage>();
 
-  auto *syntaxFilter = new SyntaxMutationFilter(diagnostics, std::move(storage));
+  auto *syntaxFilter =
+      new SyntaxMutationFilter(diagnostics, std::move(storage));
   filterStorage.emplace_back(syntaxFilter);
 
   filters.mutationFilters.push_back(syntaxFilter);

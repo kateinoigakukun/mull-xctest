@@ -2,6 +2,7 @@
 #include "MullXCTest/Tasks/EmbedMutantInfoTask.h"
 #include "MullXCTest/Tasks/ExtractEmbeddedFileTask.h"
 #include "MullXCTest/Tasks/LoadBitcodeFromBufferTask.h"
+#include <mull/Filters/MutationFilter.h>
 #include <mull/Mutant.h>
 #include <mull/Mutators/MutatorsFactory.h>
 #include <mull/Parallelization/Parallelization.h>
@@ -9,7 +10,6 @@
 #include <mull/Program/Program.h>
 #include <mull/Toolchain/Runner.h>
 #include <mull/Toolchain/Toolchain.h>
-#include <mull/Filters/MutationFilter.h>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -123,8 +123,8 @@ LinkerInvocation::filterMutations(std::vector<MutationPoint *> mutationPoints) {
 
     std::string label = std::string("Applying filter: ") + filter->name();
     std::vector<MutationPoint *> tmp;
-    TaskExecutor<MutationFilterTask> filterRunner(
-        diagnostics, label, mutations, tmp, std::move(tasks));
+    TaskExecutor<MutationFilterTask> filterRunner(diagnostics, label, mutations,
+                                                  tmp, std::move(tasks));
     filterRunner.execute();
     mutations = std::move(tmp);
   }
