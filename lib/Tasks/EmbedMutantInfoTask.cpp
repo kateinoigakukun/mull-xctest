@@ -59,14 +59,13 @@ static void emitGlobalList(Module &module,
 }
 
 static void embedMutantInfo(Bitcode &bitcode) {
-  if (bitcode.getMutationPointsMap().empty())
-    return;
   auto *module = bitcode.getModule();
 
   std::string entriesString;
   llvm::raw_string_ostream stream(entriesString);
   MutantSerializer serializer(stream);
   std::set<std::string> entries;
+  serializer.serializeMetadata();
   for (auto pair : bitcode.getMutationPointsMap()) {
     for (auto point : pair.second) {
       if (entries.insert(point->getUserIdentifier()).second) {

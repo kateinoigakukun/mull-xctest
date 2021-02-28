@@ -112,13 +112,18 @@ void bootstrapConfiguration(mull::Configuration &configuration,
   configuration.timeout = mull::MullDefaultTimeoutMilliseconds;
 }
 
-void bootstrapInvocationConfiguration(mull_xctest::InvocationConfig &configuration) {
+void bootstrapInvocationConfiguration(mull_xctest::InvocationConfig &configuration,
+                                      mull::Diagnostics &diagnostics) {
   if(DumpLLVM.empty()) {
     configuration.DumpLLVM = llvm::None;
   } else {
     configuration.DumpLLVM = DumpLLVM;
   }
   configuration.EnableSyntaxFilter = EnableSyntaxFilter;
+  if (EnableSyntaxFilter.hasArgStr()) {
+    std::string status = configuration.EnableSyntaxFilter ? "enabled" : "disabled";
+    diagnostics.debug("syntax filter is " + status);
+  }
 }
 
 int main(int argc, char **argv) {
@@ -152,7 +157,7 @@ int main(int argc, char **argv) {
   bootstrapConfiguration(configuration, diagnostics);
 
   validateConfiguration(configuration, diagnostics);
-  bootstrapInvocationConfiguration(invocationConfig);
+  bootstrapInvocationConfiguration(invocationConfig, diagnostics);
 
   bootstrapFilters(filters, diagnostics, filterStorage);
   mull::MutatorsFactory factory(diagnostics);

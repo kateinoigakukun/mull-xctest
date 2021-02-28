@@ -65,6 +65,10 @@ int main(int argc, char **argv) {
   MutantDeserializer deserializer(contentsData.get(), factory);
 
   std::vector<std::unique_ptr<mull::Mutant>> mutants;
+  if (deserializer.consumeMetadata()) {
+    diagnostics.error("error while reading metadata");
+    return 1;
+  }
   while (!deserializer.isEOF()) {
     std::unique_ptr<mull::MutationPoint> point = deserializer.deserialize();
     if (!point) {
@@ -76,6 +80,11 @@ int main(int argc, char **argv) {
     std::vector<mull::MutationPoint *> points;
     points.push_back(pointsOwner.back().get());
     mutants.push_back(std::make_unique<Mutant>(id, points));
+  }
+
+  if (mutants.empty()) {
+    llvm::outs() << "no mutant info found\n";
+    return 0;
   }
 
   for (auto &mutant : mutants) {

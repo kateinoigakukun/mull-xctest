@@ -15,6 +15,7 @@ class MutantSerializer {
 
 public:
   MutantSerializer(llvm::raw_ostream &output) : output(output) {}
+  void serializeMetadata();
   void serialize(mull::MutationPoint *point);
 };
 
@@ -31,6 +32,9 @@ public:
   MutantDeserializer(llvm::StringRef buffer, mull::MutatorsFactory &factory)
       : buffer(buffer), factory(factory) {}
   bool isEOF() const;
+
+  /// \returns true if an error occurred.
+  bool consumeMetadata();
   std::unique_ptr<mull::MutationPoint> deserialize();
 };
 

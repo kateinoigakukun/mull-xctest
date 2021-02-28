@@ -127,6 +127,10 @@ std::vector<std::unique_ptr<mull::Mutant>> XCTestInvocation::extractMutantInfo(
     diagnostics.error(errorMessage.str());
   }
   MutantDeserializer deserializer(contentsData.get(), factory);
+  if (deserializer.consumeMetadata()) {
+    diagnostics.error("error while reading metadata");
+    return {};
+  }
 
   std::vector<std::unique_ptr<mull::Mutant>> mutants;
   while (!deserializer.isEOF()) {

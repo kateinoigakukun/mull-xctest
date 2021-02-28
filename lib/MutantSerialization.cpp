@@ -5,6 +5,9 @@
 
 using namespace mull_xctest;
 
+static const char magic[] = "mull";
+static const char version = 1;
+
 void MutantSerializer::writeInt(int value) {
   char bytes[4];
   llvm::support::endian::write32be(bytes, value);
@@ -13,6 +16,10 @@ void MutantSerializer::writeInt(int value) {
 void MutantSerializer::writeString(const std::string &str) {
   output.write(str.c_str(), str.size());
   output.write('\0');
+}
+void MutantSerializer::serializeMetadata() {
+  writeString(magic);
+  writeInt(version);
 }
 void MutantSerializer::serialize(mull::MutationPoint *point) {
   writeString(point->getMutator()->getUniqueIdentifier());
@@ -48,6 +55,12 @@ int MutantDeserializer::readInt() {
   int value = llvm::support::endian::read32be(buffer.data() + cursor);
   cursor += 4;
   return value;
+}
+
+bool MutantDeserializer::consumeMetadata() {
+  std::string readMagic = readString();
+  int readVersion = readInt();
+  return !(readMagic == magic && readVersion == version);
 }
 
 std::unique_ptr<mull::MutationPoint> MutantDeserializer::deserialize() {

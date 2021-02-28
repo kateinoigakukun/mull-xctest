@@ -12,7 +12,18 @@ using namespace mull_xctest;
 using namespace mull;
 using namespace llvm;
 
-const char fixture[] = "";
+TEST(MutantSerializationTest, metadata) {
+  Diagnostics diags;
+  MutatorsFactory factory(diags);
+
+  std::string entriesString;
+  raw_string_ostream stream(entriesString);
+  MutantSerializer serializer(stream);
+  serializer.serializeMetadata();
+
+  MutantDeserializer deserializer(StringRef(entriesString), factory);
+  ASSERT_FALSE(deserializer.consumeMetadata());
+}
 
 TEST(MutantSerializationTest, singlePoint) {
   Diagnostics diags;
