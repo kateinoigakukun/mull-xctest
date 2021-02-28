@@ -161,8 +161,10 @@ int main(int argc, char **argv) {
 
   bootstrapFilters(filters, diagnostics, filterStorage);
   mull::MutatorsFactory factory(diagnostics);
-  mull::MutationsFinder mutationsFinder(factory.mutators({"cxx_comparison", "cxx_arithmetic"}),
-                                        configuration);
+  std::vector<std::string> groups = {
+    "cxx_comparison", "cxx_arithmetic", "cxx_arithmetic_assignment"
+  };
+  mull::MutationsFinder mutationsFinder(factory.mutators(groups), configuration);
 
   mull_xctest::LinkerInvocation invocation(
       inputObjects, filters, mutationsFinder, args, diagnostics, configuration,

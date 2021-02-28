@@ -105,6 +105,12 @@ let BINARY_MUTATIONS: [String: SyntaxMutatorKind] = [
     "*" : .CXX_MulToDiv,
     "/" : .CXX_DivToMul,
     "%" : .CXX_RemToDiv,
+
+    "+=": .CXX_AddAssignToSubAssign,
+    "-=": .CXX_SubAssignToAddAssign,
+    "*=": .CXX_MulAssignToDivAssign,
+    "/=": .CXX_DivAssignToMulAssign,
+    "%=": .CXX_RemAssignToDivAssign,
 ]
 
 class SourceUnitLocationIndexer: SyntaxAnyVisitor {
