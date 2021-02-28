@@ -1,6 +1,7 @@
 // RUN: %empty-directory(%t)
 // RUN: swiftc %s -tools-directory %mull-xctest-bin -embed-bitcode -g -o %t/try.swift.out -sdk %target-sdk
-// RUN: mull-dump-mutants %t/try.swift.out | FileCheck %s
+// no mutation
+// RUN: not mull-dump-mutants %t/try.swift.out
 
 // CHECK-NOT: cxx_eq_to_ne /<compiler-generated>:0:0
 
