@@ -1,4 +1,4 @@
-; RUN: llc --filetype=obj %s -o %t
+; RUN: clang -c %s -o %t
 ; RUN: mull-dump-mutants %t | FileCheck %s
 
 ; CHECK: Mutation Point: cxx_ne_to_eq /tmp.swift:17:9
