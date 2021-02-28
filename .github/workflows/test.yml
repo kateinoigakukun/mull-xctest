@@ -50,4 +50,6 @@ jobs:
         set -ex
         pip install lit
         cd build
+        ninja mullXCTest-tests
+        ninja test
         lit tests -v --path $PWD/bin
