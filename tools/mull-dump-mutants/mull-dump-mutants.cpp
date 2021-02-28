@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
       machOObjectFile->getSection(sectionName);
   if (!section) {
     diagnostics.error("section " MULL_MUTANTS_INFO_SECTION_NAME_STR
-                      "not found");
+                      " not found");
     llvm::consumeError(section.takeError());
     return 1;
   }

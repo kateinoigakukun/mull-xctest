@@ -7,7 +7,7 @@ using namespace mull_xctest::swift;
 
 class IndexSwiftSourceTask {
 public:
-  using In = std::vector<SourceFilePath>;
+  using In = std::set<SourceFilePath>;
   using Out = std::vector<
       std::pair<SourceFilePath, std::unique_ptr<SourceUnitStorage>>>;
   using iterator = In::iterator;
@@ -32,7 +32,7 @@ void IndexSwiftSourceTask::operator()(iterator begin, iterator end,
 }
 
 SourceStorage
-SyntaxMutationFinder::findMutations(std::vector<SourceFilePath> sources,
+SyntaxMutationFinder::findMutations(std::set<SourceFilePath> &sources,
                                     mull::Diagnostics &diagnostics,
                                     const mull::Configuration &config) {
   std::vector<std::pair<SourceFilePath, std::unique_ptr<SourceUnitStorage>>>

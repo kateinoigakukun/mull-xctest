@@ -10,10 +10,11 @@ void SourceStorage::saveMutations(
 
 bool SourceStorage::hasMutation(const std::string &filePath, int line,
                                 int column, mull::MutatorKind kind) {
-  std::unique_ptr<SourceUnitStorage> &unitStorage = storage.at(filePath);
-  if (!unitStorage) {
+  auto found = storage.find(filePath);
+  if (found == storage.end()) {
     return false;
   }
+  auto &unitStorage = found->second;
   return unitStorage->hasMutation(line, column, kind);
 }
 

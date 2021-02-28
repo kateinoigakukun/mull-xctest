@@ -2,6 +2,8 @@
 #include "MullXCTest/Tasks/EmbedMutantInfoTask.h"
 #include "MullXCTest/Tasks/ExtractEmbeddedFileTask.h"
 #include "MullXCTest/Tasks/LoadBitcodeFromBufferTask.h"
+#include "MullXCTest/SwiftSupport/SyntaxMutationFilter.h"
+#include "MullXCTest/SwiftSupport/SyntaxMutationFinder.h"
 #include <mull/Filters/MutationFilter.h>
 #include <mull/Mutant.h>
 #include <mull/Mutators/MutatorsFactory.h>
@@ -10,12 +12,29 @@
 #include <mull/Program/Program.h>
 #include <mull/Toolchain/Runner.h>
 #include <mull/Toolchain/Toolchain.h>
+#include <llvm/Support/Path.h>
 #include <sstream>
 #include <string>
+#include <set>
 #include <unordered_map>
 
 using namespace mull_xctest;
 using namespace mull;
+
+
+static void dumpLLVM(Program &program, std::string destDir) {
+  auto &bitcode = program.bitcode();
+  for (auto it = bitcode.begin(); it != bitcode.end(); ++it) {
+    llvm::Module *module = it->get()->getModule();
+    auto filename = llvm::sys::path::filename(module->getSourceFileName());
+    llvm::SmallString<64> filepath(destDir);
+    llvm::sys::path::append(filepath, filename);
+    llvm::sys::path::replace_extension(filepath, "ll");
+    std::error_code ec;
+    llvm::raw_fd_ostream os(filepath, ec);
+    module->print(os, nullptr);
+  }
+}
 
 void LinkerInvocation::run() {
   const auto workers = config.parallelization.workers;
@@ -49,6 +68,11 @@ void LinkerInvocation::run() {
 
   // Step 3: Find mutation points from LLVM modules
   auto mutationPoints = findMutationPoints(program);
+
+  if (invocationConfig.EnableSyntaxFilter) {
+    setupSyntaxFilter(mutationPoints);
+  }
+
   auto filteredMutations = filterMutations(std::move(mutationPoints));
   std::vector<std::unique_ptr<Mutant>> mutants;
   singleTask.execute("Deduplicate mutants", [&]() {
@@ -64,6 +88,10 @@ void LinkerInvocation::run() {
 
   // Step 4. Apply mutations
   applyMutation(program, filteredMutations);
+
+  if (invocationConfig.DumpLLVM.hasValue()) {
+    dumpLLVM(program, invocationConfig.DumpLLVM.getValue());
+  }
 
   // Step 5. Compile LLVM modules to object files
   mull::Toolchain toolchain(diagnostics, config);
@@ -108,6 +136,26 @@ void LinkerInvocation::selectInstructions(
       diagnostics, "Instruction selection", functions, Nothing,
       std::move(tasks));
   filterRunner.execute();
+}
+
+void LinkerInvocation::setupSyntaxFilter(std::vector<MutationPoint *> &mutationPoints) {
+  std::set<std::string> sourcePaths;
+  for (auto it = mutationPoints.begin(); it != mutationPoints.end(); ++it) {
+    MutationPoint *point = *it;
+    sourcePaths.insert(point->getSourceLocation().filePath);
+  }
+  
+  using namespace mull_xctest::swift;
+  SyntaxMutationFinder finder;
+  auto storage = std::make_unique<SourceStorage>();
+
+  finder.findMutations(sourcePaths, diagnostics, config);
+
+  auto *syntaxFilter =
+      new SyntaxMutationFilter(diagnostics, std::move(storage));
+  syntaxFilterOwner = std::unique_ptr<mull::MutationFilter>(syntaxFilter);
+  filters.mutationFilters.push_back(syntaxFilter);
+
 }
 
 std::vector<MutationPoint *>

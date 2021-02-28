@@ -1,6 +1,4 @@
 #include "LinkerInvocation.h"
-#include "MullXCTest/SwiftSupport/SyntaxMutationFilter.h"
-#include "MullXCTest/SwiftSupport/SyntaxMutationFinder.h"
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/CommandLine.h>
@@ -31,6 +29,14 @@ opt<std::string> Linker("linker", desc("Linker program"), value_desc("string"),
 opt<bool> DebugEnabled("debug",
                        desc("Enables Debug Mode: more logs are printed"),
                        Optional, init(false), cat(MullLDCategory));
+
+opt<std::string> DumpLLVM("dump-llvm",
+                          desc("Dump intermediate LLVM IRs in the specified directory"),
+                          Optional, cat(MullLDCategory));
+
+opt<bool> EnableSyntaxFilter("enable-syntax",
+                             desc("Enables syntax filter for Swift"),
+                             Optional, init(true), cat(MullLDCategory));
 
 void extractBitcodeFiles(std::vector<std::string> &args,
                          std::vector<llvm::StringRef> &bitcodeFiles) {
@@ -92,16 +98,6 @@ void bootstrapFilters(
 
   filters.mutationFilters.push_back(filePathFilter);
   filters.functionFilters.push_back(filePathFilter);
-
-  using namespace mull_xctest::swift;
-  SyntaxMutationFinder finder;
-  auto storage = std::make_unique<SourceStorage>();
-
-  auto *syntaxFilter =
-      new SyntaxMutationFilter(diagnostics, std::move(storage));
-  filterStorage.emplace_back(syntaxFilter);
-
-  filters.mutationFilters.push_back(syntaxFilter);
 }
 
 void bootstrapConfiguration(mull::Configuration &configuration,
@@ -114,6 +110,15 @@ void bootstrapConfiguration(mull::Configuration &configuration,
   configuration.debugEnabled = DebugEnabled;
   configuration.linkerTimeout = mull::MullDefaultLinkerTimeoutMilliseconds;
   configuration.timeout = mull::MullDefaultTimeoutMilliseconds;
+}
+
+void bootstrapInvocationConfiguration(mull_xctest::InvocationConfig &configuration) {
+  if(DumpLLVM.empty()) {
+    configuration.DumpLLVM = llvm::None;
+  } else {
+    configuration.DumpLLVM = DumpLLVM;
+  }
+  configuration.EnableSyntaxFilter = EnableSyntaxFilter;
 }
 
 int main(int argc, char **argv) {
@@ -142,10 +147,12 @@ int main(int argc, char **argv) {
   std::vector<std::unique_ptr<mull::Filter>> filterStorage;
   mull::Filters filters;
   mull::Configuration configuration;
+  mull_xctest::InvocationConfig invocationConfig;
 
   bootstrapConfiguration(configuration, diagnostics);
 
   validateConfiguration(configuration, diagnostics);
+  bootstrapInvocationConfiguration(invocationConfig);
 
   bootstrapFilters(filters, diagnostics, filterStorage);
   mull::MutatorsFactory factory(diagnostics);
@@ -153,7 +160,8 @@ int main(int argc, char **argv) {
                                         configuration);
 
   mull_xctest::LinkerInvocation invocation(
-      inputObjects, filters, mutationsFinder, args, diagnostics, configuration);
+      inputObjects, filters, mutationsFinder, args, diagnostics, configuration,
+      invocationConfig);
   invocation.run();
   llvm::llvm_shutdown();
   return 0;
