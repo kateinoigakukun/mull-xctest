@@ -147,9 +147,8 @@ void LinkerInvocation::setupSyntaxFilter(std::vector<MutationPoint *> &mutationP
   
   using namespace mull_xctest::swift;
   SyntaxMutationFinder finder;
-  auto storage = std::make_unique<SourceStorage>();
 
-  finder.findMutations(sourcePaths, diagnostics, config);
+  auto storage = finder.findMutations(sourcePaths, diagnostics, config);
 
   auto *syntaxFilter =
       new SyntaxMutationFilter(diagnostics, std::move(storage));

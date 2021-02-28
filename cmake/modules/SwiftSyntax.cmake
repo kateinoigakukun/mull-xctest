@@ -8,7 +8,7 @@ ExternalProject_Add(SwiftSyntax
   CONFIGURE_COMMAND ""
   INSTALL_COMMAND   ""
   BUILD_COMMAND ${swift_build}
-    "--product" "SwiftSyntax" "--configuration" "release"
+    "--product" "SwiftSyntax" "--configuration" $<IF:$<CONFIG:Debug>,debug,release>
     "--package-path" "<SOURCE_DIR>"
     "--build-path" "<BINARY_DIR>"
   BUILD_BYPRODUCTS "<BINARY_DIR>/release/libSwiftSyntax.a"

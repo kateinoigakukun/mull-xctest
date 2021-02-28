@@ -27,6 +27,6 @@ bool SyntaxMutationFilter::shouldSkip(mull::MutationPoint *point) {
   }
 
   auto sourceLocation = mull::SourceLocation::locationFromInstruction(instruction);
-  return !storage->hasMutation(sourceLocation.filePath, sourceLocation.line, sourceLocation.column,
-                               point->getMutator()->mutatorKind());
+  return !storage.hasMutation(sourceLocation.filePath, sourceLocation.line, sourceLocation.column,
+                              point->getMutator()->mutatorKind());
 }

@@ -12,14 +12,14 @@ namespace swift {
 class SyntaxMutationFilter : public mull::MutationFilter {
 public:
   SyntaxMutationFilter(mull::Diagnostics &diagnostics,
-                       std::unique_ptr<SourceStorage> storage)
+                       SourceStorage storage)
     : diagnostics(diagnostics), storage(std::move(storage)) {}
   bool shouldSkip(mull::MutationPoint *point) override;
   std::string name() override;
 
 private:
   mull::Diagnostics &diagnostics;
-  std::unique_ptr<SourceStorage> storage;
+  SourceStorage storage;
 };
 } // namespace swift
 
