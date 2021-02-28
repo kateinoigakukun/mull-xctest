@@ -104,6 +104,7 @@ let BINARY_MUTATIONS: [String: SyntaxMutatorKind] = [
     "-" : .CXX_SubToAdd,
     "*" : .CXX_MulToDiv,
     "/" : .CXX_DivToMul,
+    "%" : .CXX_RemToDiv,
 ]
 
 class SourceUnitLocationIndexer: SyntaxAnyVisitor {
