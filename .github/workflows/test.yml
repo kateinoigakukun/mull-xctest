@@ -9,9 +9,8 @@ jobs:
         submodules: recursive
     - name: Install LLVM
       run: |
-        curl -sSfL https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/clang+llvm-11.0.0-x86_64-apple-darwin.tar.xz | tar xJf -
-        export LLVM_DIR=$PWD/clang+llvm-11.0.0-x86_64-apple-darwin
-        echo "LLVM_DIR=$LLVM_DIR" >> $GITHUB_ENV
+        brew install llvm
+        echo "LLVM_DIR=/usr/local/opt/llvm" >> $GITHUB_ENV
     - name: Install build tools
       run: brew install ccache ninja
     - name: Prepare ccache timestamp
