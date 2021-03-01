@@ -38,6 +38,12 @@ opt<bool> EnableSyntaxFilter("enable-syntax",
                              desc("Enables syntax filter for Swift"),
                              Optional, init(true), cat(MullLDCategory));
 
+opt<unsigned> Workers("workers",
+                      desc("How many threads to use"),
+                      Optional,
+                      value_desc("number"),
+                      cat(MullLDCategory));
+
 void extractBitcodeFiles(std::vector<std::string> &args,
                          std::vector<llvm::StringRef> &bitcodeFiles) {
   for (const auto &rawArg : args) {
@@ -106,6 +112,9 @@ void bootstrapConfiguration(mull::Configuration &configuration,
     configuration.linker = linker.getValue();
   } else {
     diagnostics.error("no real linker found");
+  }
+  if (Workers) {
+    configuration.parallelization.workers = Workers;
   }
   configuration.debugEnabled = DebugEnabled;
   configuration.linkerTimeout = mull::MullDefaultLinkerTimeoutMilliseconds;

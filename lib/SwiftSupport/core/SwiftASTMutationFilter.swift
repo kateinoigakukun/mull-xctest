@@ -69,7 +69,7 @@ typealias LineColumnHash = Int
 struct SyntaxMutation {
     let line: Int
     let column: Int
-    let kind: SyntaxMutatorKind
+    let kind: Set<SyntaxMutatorKind>
 }
 
 func lineColumnHash(line: Int, column: Int) -> LineColumnHash {
@@ -85,11 +85,12 @@ class SourceUnitStorage {
         self.converter = converter
     }
 
-    func hasMutation(line: Int, column: Int, mutation: SyntaxMutatorKind) -> Bool {
+    func hasMutation(line: Int, column: Int, mutation kind: SyntaxMutatorKind) -> Bool {
         let hash = lineColumnHash(line: line, column: column)
-        return storage[hash]?.kind == mutation
+        guard let mutation = storage[hash] else { return false }
+        return mutation.kind.contains(kind)
     }
-    func save<S: SyntaxProtocol>(mutation: SyntaxMutatorKind, node: S) {
+    func save<S: SyntaxProtocol>(mutation: Set<SyntaxMutatorKind>, node: S) {
         let location = node.startLocation(converter: converter)
         guard let line = location.line, let column = location.column else {
             return
@@ -99,18 +100,38 @@ class SourceUnitStorage {
     }
 }
 
-let BINARY_MUTATIONS: [String: SyntaxMutatorKind] = [
-    "+" : .CXX_AddToSub,
-    "-" : .CXX_SubToAdd,
-    "*" : .CXX_MulToDiv,
-    "/" : .CXX_DivToMul,
-    "%" : .CXX_RemToDiv,
+let BINARY_MUTATIONS: [String: Set<SyntaxMutatorKind>] = [
+    "+" : [.CXX_AddToSub],
+    "-" : [.CXX_SubToAdd],
+    "*" : [.CXX_MulToDiv],
+    "/" : [.CXX_DivToMul],
+    "%" : [.CXX_RemToDiv],
 
-    "+=": .CXX_AddAssignToSubAssign,
-    "-=": .CXX_SubAssignToAddAssign,
-    "*=": .CXX_MulAssignToDivAssign,
-    "/=": .CXX_DivAssignToMulAssign,
-    "%=": .CXX_RemAssignToDivAssign,
+    "+=": [.CXX_AddAssignToSubAssign],
+    "-=": [.CXX_SubAssignToAddAssign],
+    "*=": [.CXX_MulAssignToDivAssign],
+    "/=": [.CXX_DivAssignToMulAssign],
+    "%=": [.CXX_RemAssignToDivAssign],
+
+    "==": [.CXX_EqualToNotEqual],
+    "!=": [.CXX_NotEqualToEqual],
+
+    "<" : [
+        .CXX_LessThanToGreaterOrEqual, // < -> >=
+        .CXX_LessThanToLessOrEqual,    // < -> <=
+    ],
+    ">" : [
+        .CXX_GreaterThanToLessOrEqual,    // > -> <=
+        .CXX_GreaterThanToGreaterOrEqual, // > -> >=
+    ],
+    "<=": [
+        .CXX_LessOrEqualToGreaterThan, // <= -> >
+        .CXX_LessOrEqualToLessThan,    // <= -> <
+    ],
+    ">=": [
+        .CXX_GreaterOrEqualToLessThan,    // >= -> <
+        .CXX_GreaterOrEqualToGreaterThan, // >= -> >
+    ],
 ]
 
 class SourceUnitLocationIndexer: SyntaxAnyVisitor {
