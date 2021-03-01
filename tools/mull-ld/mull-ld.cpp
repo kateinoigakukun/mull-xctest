@@ -171,7 +171,8 @@ int main(int argc, char **argv) {
   bootstrapFilters(filters, diagnostics, filterStorage);
   mull::MutatorsFactory factory(diagnostics);
   std::vector<std::string> groups = {
-    "cxx_comparison", "cxx_arithmetic", "cxx_arithmetic_assignment"
+    "cxx_comparison", "cxx_arithmetic", "cxx_arithmetic_assignment",
+    "cxx_boundary",
   };
   mull::MutationsFinder mutationsFinder(factory.mutators(groups), configuration);
 
