@@ -32,12 +32,13 @@ jobs:
         mkdir build
         cd build
         cmake ../ -G Ninja \
-          -DCMAKE_C_COMPILER="$LLVM_DIR/bin/clang" \
-          -DCMAKE_CXX_COMPILER="$LLVM_DIR/bin/clang++" \
-          -DCMAKE_Swift_COMPILER="$(xcrun -f swiftc)" \
-          -DPATH_TO_LLVM="$LLVM_DIR" \
-          -DCMAKE_CXX_FLAGS=-fno-rtti \
-          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          -D CMAKE_BUILD_TYPE=Debug \
+          -D CMAKE_C_COMPILER="$LLVM_DIR/bin/clang" \
+          -D CMAKE_CXX_COMPILER="$LLVM_DIR/bin/clang++" \
+          -D CMAKE_Swift_COMPILER="$(xcrun -f swiftc)" \
+          -D PATH_TO_LLVM="$LLVM_DIR" \
+          -D CMAKE_CXX_FLAGS=-fno-rtti \
+          -D CMAKE_CXX_COMPILER_LAUNCHER=ccache
         ninja all
       env:
         CCACHE_DIR: ${{ github.workspace }}/.ccache
