@@ -1,9 +1,11 @@
 #include "LinkerInvocation.h"
+#include "MullXCTest/SwiftSupport/SyntaxMutationFilter.h"
+#include "MullXCTest/SwiftSupport/SyntaxMutationFinder.h"
 #include "MullXCTest/Tasks/EmbedMutantInfoTask.h"
 #include "MullXCTest/Tasks/ExtractEmbeddedFileTask.h"
 #include "MullXCTest/Tasks/LoadBitcodeFromBufferTask.h"
-#include "MullXCTest/SwiftSupport/SyntaxMutationFilter.h"
-#include "MullXCTest/SwiftSupport/SyntaxMutationFinder.h"
+#include <llvm/Option/ArgList.h>
+#include <llvm/Support/Path.h>
 #include <mull/Filters/MutationFilter.h>
 #include <mull/Mutant.h>
 #include <mull/Mutators/MutatorsFactory.h>
@@ -12,10 +14,9 @@
 #include <mull/Program/Program.h>
 #include <mull/Toolchain/Runner.h>
 #include <mull/Toolchain/Toolchain.h>
-#include <llvm/Support/Path.h>
+#include <set>
 #include <sstream>
 #include <string>
-#include <set>
 #include <unordered_map>
 
 using namespace mull_xctest;
@@ -218,16 +219,17 @@ void LinkerInvocation::applyMutation(
 
 void LinkerInvocation::link(std::vector<std::string> objectFiles) {
   Runner runner(diagnostics);
+  llvm::opt::ArgStringList originalArgs;
+  linkerOpts.collectObjectLinkOpts(originalArgs);
+
   std::vector<std::string> arguments;
   std::copy(std::begin(objectFiles), std::end(objectFiles),
             std::back_inserter(arguments));
-  for (auto it = originalArgs.begin(); it != originalArgs.end(); ++it) {
-    llvm::StringRef str(*it);
-    if (str.endswith(".o") || str.equals("-bitcode_bundle")) {
-      continue;
-    }
-    arguments.push_back(*it);
+
+  for (auto arg : originalArgs) {
+    arguments.emplace_back(arg);
   }
+
   ExecutionResult result = runner.runProgram(config.linker, arguments, {},
                                              config.linkerTimeout, true);
   std::stringstream commandStream;

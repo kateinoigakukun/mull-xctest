@@ -1,6 +1,9 @@
 #include "LinkerInvocation.h"
+#include "LinkerOptions.h"
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
+#include <llvm/Option/ArgList.h>
+#include <llvm/Option/OptTable.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
@@ -25,6 +28,11 @@ OptionCategory MullLDCategory("mull-ld");
 
 opt<std::string> Linker("linker", desc("Linker program"), value_desc("string"),
                         Optional, cat(MullLDCategory));
+
+opt<std::string> LinkerFlavor("linker-flavor",
+                              desc("Linker flavor (clang|ld64)"),
+                              value_desc("string"), Optional, init("ld64"),
+                              cat(MullLDCategory));
 
 opt<bool> DebugEnabled("debug",
                        desc("Enables Debug Mode: more logs are printed"),
@@ -137,7 +145,6 @@ void bootstrapInvocationConfiguration(mull_xctest::InvocationConfig &configurati
 
 int main(int argc, char **argv) {
   mull::Diagnostics diagnostics;
-  std::vector<llvm::StringRef> inputObjects;
   std::vector<std::unique_ptr<llvm::MemoryBuffer>> bitcodeBuffers;
 
   bool validOptions = llvm::cl::ParseCommandLineOptions(
@@ -150,8 +157,17 @@ int main(int argc, char **argv) {
     diagnostics.enableDebugMode();
   }
 
-  std::vector<std::string> args(argv + 1, argv + argc);
-  extractBitcodeFiles(args, inputObjects);
+  mull_xctest::LinkerOptTable *optTable =
+      mull_xctest::GetLinkerOptTable(LinkerFlavor);
+  llvm::ArrayRef<const char *> args(argv + 1, argv + argc);
+  unsigned missingIndex;
+  unsigned missingCount;
+  auto parsedArgs = optTable->ParseArgs(args, missingIndex, missingCount);
+  mull_xctest::LinkerOptions options(*optTable, parsedArgs);
+
+  std::vector<llvm::StringRef> inputObjects;
+  options.collectObjectFiles(inputObjects);
+
   validateInputFiles(inputObjects);
 
   llvm::InitializeNativeTarget();
@@ -177,8 +193,8 @@ int main(int argc, char **argv) {
   mull::MutationsFinder mutationsFinder(factory.mutators(groups), configuration);
 
   mull_xctest::LinkerInvocation invocation(
-      inputObjects, filters, mutationsFinder, args, diagnostics, configuration,
-      invocationConfig);
+      inputObjects, filters, mutationsFinder, options, diagnostics,
+      configuration, invocationConfig);
   invocation.run();
   llvm::llvm_shutdown();
   return 0;

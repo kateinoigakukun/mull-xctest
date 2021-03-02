@@ -1,7 +1,9 @@
 #ifndef LinkerInvocation_h
 #define LinkerInvocation_h
 
+#include "LinkerOptions.h"
 #include <llvm/ADT/StringRef.h>
+#include <llvm/Option/OptTable.h>
 #include <mull/Config/Configuration.h>
 #include <mull/Diagnostics/Diagnostics.h>
 #include <mull/Filters/Filters.h>
@@ -23,7 +25,7 @@ class LinkerInvocation {
   mull::Diagnostics &diagnostics;
   const mull::Configuration &config;
   const InvocationConfig &invocationConfig;
-  std::vector<std::string> originalArgs;
+  LinkerOptions &linkerOpts;
   mull::SingleTaskExecutor singleTask;
   struct mull::Filters &filters;
   mull::MutationsFinder &mutationsFinder;
@@ -33,12 +35,11 @@ public:
   LinkerInvocation(std::vector<llvm::StringRef> inputObjects,
                    struct mull::Filters &filters,
                    mull::MutationsFinder &mutationsFinder,
-                   std::vector<std::string> originalArgs,
-                   mull::Diagnostics &diagnostics,
+                   LinkerOptions &originalArgs, mull::Diagnostics &diagnostics,
                    const mull::Configuration &config,
                    const InvocationConfig &invocationConfig)
       : inputObjects(inputObjects), filters(filters),
-        mutationsFinder(mutationsFinder), originalArgs(originalArgs),
+        mutationsFinder(mutationsFinder), linkerOpts(originalArgs),
         diagnostics(diagnostics), config(config), singleTask(diagnostics),
         invocationConfig(invocationConfig) {}
   void run();

@@ -1,9 +1,38 @@
+file(DOWNLOAD
+  "https://raw.githubusercontent.com/llvm/llvm-project/release/11.x/lld/MachO/Options.td"
+  ${CMAKE_CURRENT_BINARY_DIR}/ld64/Options.td)
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ld64/Options.inc
+  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ld64/Options.td
+  COMMAND "${PATH_TO_LLVM}/bin/llvm-tblgen"
+    "-gen-opt-parser-defs" "-I${PATH_TO_LLVM}/include" "${CMAKE_CURRENT_BINARY_DIR}/ld64/Options.td"
+    "-o" "${CMAKE_CURRENT_BINARY_DIR}/ld64/Options.inc"
+)
+
+file(DOWNLOAD
+  "https://raw.githubusercontent.com/llvm/llvm-project/release/11.x/clang/include/clang/Driver/Options.td"
+  ${CMAKE_CURRENT_BINARY_DIR}/clang/Options.td)
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/clang/Options.inc
+  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/clang/Options.td
+  COMMAND "${PATH_TO_LLVM}/bin/llvm-tblgen"
+    "-gen-opt-parser-defs" "-I${PATH_TO_LLVM}/include" "${CMAKE_CURRENT_BINARY_DIR}/clang/Options.td"
+    "-o" "${CMAKE_CURRENT_BINARY_DIR}/clang/Options.inc"
+)
+
+
 llvm_map_components_to_libnames(llvm_libs all)
 add_executable(mull-ld
   mull-ld.cpp
   LinkerInvocation.cpp
-  LinkerInvocation.h)
+  LinkerInvocation.h
+  LinkerOptions.cpp
+  LinkerOptions.h
+  ${CMAKE_CURRENT_BINARY_DIR}/ld64/Options.inc
+  ${CMAKE_CURRENT_BINARY_DIR}/clang/Options.inc)
 
+target_include_directories(mull-ld
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(mull-ld
   mullXCTest mullSwiftSupport
   mull MullVersion ebc json11
