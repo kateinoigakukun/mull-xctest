@@ -21,7 +21,7 @@ struct InvocationConfig {
 };
 
 class LinkerInvocation {
-  std::vector<llvm::StringRef> inputObjects;
+  std::vector<std::string> inputObjects;
   mull::Diagnostics &diagnostics;
   const mull::Configuration &config;
   const InvocationConfig &invocationConfig;
@@ -32,7 +32,7 @@ class LinkerInvocation {
   std::unique_ptr<mull::MutationFilter> syntaxFilterOwner;
 
 public:
-  LinkerInvocation(std::vector<llvm::StringRef> inputObjects,
+  LinkerInvocation(std::vector<std::string> inputObjects,
                    struct mull::Filters &filters,
                    mull::MutationsFinder &mutationsFinder,
                    LinkerOptions &originalArgs, mull::Diagnostics &diagnostics,

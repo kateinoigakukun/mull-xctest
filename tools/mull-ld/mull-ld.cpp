@@ -62,10 +62,10 @@ void extractBitcodeFiles(std::vector<std::string> &args,
   }
 }
 
-static void validateInputFiles(const std::vector<llvm::StringRef> &inputFiles) {
+static void validateInputFiles(const std::vector<std::string> &inputFiles) {
   for (const auto inputFile : inputFiles) {
-    if (access(inputFile.str().c_str(), R_OK) != 0) {
-      perror(inputFile.str().c_str());
+    if (access(inputFile.c_str(), R_OK) != 0) {
+      perror(inputFile.c_str());
       exit(1);
     }
   }
@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
   auto parsedArgs = optTable->ParseArgs(args, missingIndex, missingCount);
   mull_xctest::LinkerOptions options(*optTable, parsedArgs);
 
-  std::vector<llvm::StringRef> inputObjects;
+  std::vector<std::string> inputObjects;
   options.collectObjectFiles(inputObjects);
 
   validateInputFiles(inputObjects);

@@ -10,7 +10,7 @@ namespace mull_xctest {
 
 class ExtractEmbeddedFileTask {
 public:
-  using In = std::vector<llvm::StringRef>;
+  using In = std::vector<std::string>;
   using Out = std::vector<std::unique_ptr<llvm::MemoryBuffer>>;
   using iterator = In::iterator;
 

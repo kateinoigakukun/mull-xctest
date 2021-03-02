@@ -15,9 +15,10 @@ protected:
 
 public:
   virtual void collectObjectFiles(const llvm::opt::InputArgList &,
-                                  std::vector<llvm::StringRef> &) = 0;
+                                  std::vector<std::string> &) = 0;
   virtual void collectObjectLinkOpts(const llvm::opt::InputArgList &,
                                      llvm::opt::ArgStringList &output) = 0;
+  virtual void appendFilelist(const std::string filelist, std::vector<std::string> &output) = 0;
 };
 
 LinkerOptTable *GetLinkerOptTable(std::string flavor);
@@ -30,12 +31,15 @@ public:
   LinkerOptions(LinkerOptTable &optTable, const llvm::opt::InputArgList &args)
       : optTable(optTable), args(args) {}
 
-  void collectObjectFiles(std::vector<llvm::StringRef> &objects) {
+  void collectObjectFiles(std::vector<std::string> &objects) {
     optTable.collectObjectFiles(args, objects);
   }
 
   void collectObjectLinkOpts(llvm::opt::ArgStringList &output) {
     optTable.collectObjectLinkOpts(args, output);
+  }
+  void appendFilelist(const std::string filelist, std::vector<std::string> &output) {
+    optTable.appendFilelist(filelist, output);
   }
 };
 
@@ -44,9 +48,10 @@ class LD64OptTable : public LinkerOptTable {
 public:
   LD64OptTable();
   virtual void collectObjectFiles(const llvm::opt::InputArgList &,
-                                  std::vector<llvm::StringRef> &) override;
+                                  std::vector<std::string> &) override;
   virtual void collectObjectLinkOpts(const llvm::opt::InputArgList &,
                                      llvm::opt::ArgStringList &output) override;
+  virtual void appendFilelist(const std::string filelist, std::vector<std::string> &output) override;
 };
 
 namespace ld64 {
@@ -64,9 +69,10 @@ class ClangOptTable : public LinkerOptTable {
 public:
   ClangOptTable();
   virtual void collectObjectFiles(const llvm::opt::InputArgList &,
-                                  std::vector<llvm::StringRef> &) override;
+                                  std::vector<std::string> &) override;
   virtual void collectObjectLinkOpts(const llvm::opt::InputArgList &,
                                      llvm::opt::ArgStringList &output) override;
+  virtual void appendFilelist(const std::string filelist, std::vector<std::string> &output) override;
 };
 
 namespace clang {

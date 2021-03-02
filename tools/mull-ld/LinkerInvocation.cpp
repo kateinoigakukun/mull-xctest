@@ -6,6 +6,8 @@
 #include "MullXCTest/Tasks/LoadBitcodeFromBufferTask.h"
 #include <llvm/Option/ArgList.h>
 #include <llvm/Support/Path.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/FileUtilities.h>
 #include <mull/Filters/MutationFilter.h>
 #include <mull/Mutant.h>
 #include <mull/Mutators/MutatorsFactory.h>
@@ -219,16 +221,27 @@ void LinkerInvocation::applyMutation(
 
 void LinkerInvocation::link(std::vector<std::string> objectFiles) {
   Runner runner(diagnostics);
-  llvm::opt::ArgStringList originalArgs;
-  linkerOpts.collectObjectLinkOpts(originalArgs);
+  llvm::opt::ArgStringList rawArgs;
+  linkerOpts.collectObjectLinkOpts(rawArgs);
+
+  llvm::SmallString<64> filelistPath;
+  llvm::sys::fs::createTemporaryFile("mull-ld-filelist", "", filelistPath);
+  llvm::FileRemover cleaner(filelistPath);
+  std::error_code ec;
+  llvm::raw_fd_ostream filelist(filelistPath, ec);
+
+  for (auto objectFile : objectFiles) {
+    filelist << objectFile << "\n";
+  }
+  filelist.flush();
 
   std::vector<std::string> arguments;
-  std::copy(std::begin(objectFiles), std::end(objectFiles),
-            std::back_inserter(arguments));
-
-  for (auto arg : originalArgs) {
+  for (auto arg : rawArgs) {
     arguments.emplace_back(arg);
   }
+
+  std::string filelistPathStr(filelistPath);
+  linkerOpts.appendFilelist(filelistPathStr, arguments);
 
   ExecutionResult result = runner.runProgram(config.linker, arguments, {},
                                              config.linkerTimeout, true);
