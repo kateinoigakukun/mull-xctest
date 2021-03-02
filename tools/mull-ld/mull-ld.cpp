@@ -172,7 +172,7 @@ int main(int argc, char **argv) {
   mull::MutatorsFactory factory(diagnostics);
   std::vector<std::string> groups = {
     "cxx_comparison", "cxx_arithmetic", "cxx_arithmetic_assignment",
-    "cxx_boundary",
+    "cxx_boundary", "swift_logical",
   };
   mull::MutationsFinder mutationsFinder(factory.mutators(groups), configuration);
 

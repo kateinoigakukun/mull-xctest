@@ -62,7 +62,10 @@ enum SyntaxMutatorKind: Int {
     CXX_AssignConst,
     CXX_InitConst,
 
-    CXX_RemoveNegation
+    CXX_RemoveNegation,
+
+    Swift_Logical_AndToOr,
+    Swift_Logical_OrToAnd
 }
 typealias LineColumnHash = Int
 
@@ -132,6 +135,9 @@ let BINARY_MUTATIONS: [String: Set<SyntaxMutatorKind>] = [
         .CXX_GreaterOrEqualToLessThan,    // >= -> <
         .CXX_GreaterOrEqualToGreaterThan, // >= -> >
     ],
+    "&&": [
+        .Swift_Logical_AndToOr, // && -> ||
+    ]
 ]
 
 class SourceUnitLocationIndexer: SyntaxAnyVisitor {
