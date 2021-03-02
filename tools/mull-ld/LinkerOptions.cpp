@@ -58,7 +58,7 @@ void LD64OptTable::collectObjectLinkOpts(const llvm::opt::InputArgList &args,
       // -bitcode_bundle and -bundle can't be appeared at once
       continue;
     } else if (!arg->getOption().matches(ld64::OPT_INPUT)) {
-      arg->renderAsInput(args, output);
+      arg->render(args, output);
     }
   }
 }
@@ -103,7 +103,7 @@ void ClangOptTable::collectObjectLinkOpts(const llvm::opt::InputArgList &args,
                                           llvm::opt::ArgStringList &output) {
   for (auto arg : args) {
     if (!arg->getOption().matches(clang::OPT_INPUT)) {
-      arg->renderAsInput(args, output);
+      arg->render(args, output);
     }
   }
 }

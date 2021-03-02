@@ -1,0 +1,1 @@
+// RUN: MULL_XCTEST_ARGS="--linker clang --linker-flavor=clang" xcodebuild -project %S/../Inputs/Project/Project.xcodeproj -scheme DynamicFramework -destination "platform=iOS Simulator,name=iPhone 8" build-for-testing OTHER_SWIFT_FLAGS="-embed-bitcode" LD="%mull-xctest-bin/mull-ld"
