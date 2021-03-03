@@ -45,6 +45,8 @@ public:
   void run();
 
 private:
+  std::vector<mull::FunctionUnderTest> getFunctionsUnderTest(mull::Program &program);
+  std::vector<mull::FunctionUnderTest> filterFunctions(std::vector<mull::FunctionUnderTest> functions);
   std::vector<mull::MutationPoint *> findMutationPoints(mull::Program &program);
   void setupSyntaxFilter(std::vector<mull::MutationPoint *> &mutationPoints);
   std::vector<mull::MutationPoint *>

@@ -11,6 +11,7 @@
 #include <mull/Filters/MutationFilter.h>
 #include <mull/Mutant.h>
 #include <mull/Mutators/MutatorsFactory.h>
+#include <mull/Filters/FunctionFilter.h>
 #include <mull/Parallelization/Parallelization.h>
 #include <mull/Parallelization/TaskExecutor.h>
 #include <mull/Program/Program.h>
@@ -88,6 +89,11 @@ void LinkerInvocation::run() {
     std::sort(std::begin(mutants), std::end(mutants), MutantComparator());
   });
 
+  if (filteredMutations.empty()) {
+    link(inputObjects);
+    return;
+  }
+
   // Step 4. Apply mutations
   applyMutation(program, filteredMutations);
 
@@ -112,17 +118,45 @@ void LinkerInvocation::run() {
   link(objectFiles);
 }
 
-std::vector<MutationPoint *>
-LinkerInvocation::findMutationPoints(Program &program) {
+
+std::vector<mull::FunctionUnderTest> LinkerInvocation::getFunctionsUnderTest(Program &program) {
   std::vector<FunctionUnderTest> functionsUnderTest;
   for (auto &bitcode : program.bitcode()) {
     for (llvm::Function &function : *bitcode->getModule()) {
       functionsUnderTest.emplace_back(&function, bitcode.get());
     }
   }
-  selectInstructions(functionsUnderTest);
+  return functionsUnderTest;
+}
+
+std::vector<mull::FunctionUnderTest> LinkerInvocation::filterFunctions(std::vector<mull::FunctionUnderTest> functions) {
+    std::vector<FunctionUnderTest> filteredFunctions(std::move(functions));
+
+    for (auto filter : filters.functionFilters) {
+      std::vector<FunctionFilterTask> tasks;
+      tasks.reserve(config.parallelization.workers);
+      for (int i = 0; i < config.parallelization.workers; i++) {
+        tasks.emplace_back(*filter);
+      }
+
+      std::string label = std::string("Applying function filter: ") + filter->name();
+      std::vector<FunctionUnderTest> tmp;
+      TaskExecutor<FunctionFilterTask> filterRunner(
+          diagnostics, label, filteredFunctions, tmp, std::move(tasks));
+      filterRunner.execute();
+      filteredFunctions = std::move(tmp);
+    }
+
+    return filteredFunctions;
+}
+
+std::vector<MutationPoint *>
+LinkerInvocation::findMutationPoints(Program &program) {
+  std::vector<FunctionUnderTest> functionsUnderTest = getFunctionsUnderTest(program);
+  std::vector<FunctionUnderTest> filteredFunctions = filterFunctions(functionsUnderTest);
+  selectInstructions(filteredFunctions);
   return std::move(mutationsFinder.getMutationPoints(diagnostics, program,
-                                                     functionsUnderTest));
+                                                     filteredFunctions));
 }
 
 void LinkerInvocation::selectInstructions(
