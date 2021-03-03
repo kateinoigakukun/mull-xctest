@@ -50,19 +50,15 @@ opt<bool> EnableSyntaxFilter("enable-syntax",
 opt<unsigned> Workers("workers", desc("How many threads to use"), Optional,
                       value_desc("number"), cat(MullLDCategory));
 
-list<std::string> ExcludePaths(
-  "exclude-path",
-  desc("File/directory paths to ignore (supports regex)"),
-  ZeroOrMore,
-  value_desc("regex"),
-  cat(MullLDCategory));
+list<std::string>
+    ExcludePaths("exclude-path",
+                 desc("File/directory paths to ignore (supports regex)"),
+                 ZeroOrMore, value_desc("regex"), cat(MullLDCategory));
 
-list<std::string> IncludePaths(
-  "include-path",
-  desc("File/directory paths to whitelist (supports regex)"),
-  ZeroOrMore,
-  value_desc("regex"),
-  cat(MullLDCategory));
+list<std::string>
+    IncludePaths("include-path",
+                 desc("File/directory paths to whitelist (supports regex)"),
+                 ZeroOrMore, value_desc("regex"), cat(MullLDCategory));
 
 void extractBitcodeFiles(std::vector<std::string> &args,
                          std::vector<llvm::StringRef> &bitcodeFiles) {

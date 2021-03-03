@@ -7,7 +7,6 @@
 #include <vector>
 
 using namespace llvm::cl;
-using namespace llvm;
 
 opt<std::string> TestRunFile(Positional, desc("<xctestrun file>"), Required,
                              value_desc("path"));
@@ -18,6 +17,10 @@ list<std::string> XcodeBuildArgs("Xxcodebuild",
 
 opt<std::string> TestTarget("test-target", desc("test target name"), Required,
                             value_desc("name"));
+
+opt<unsigned> Timeout("timeout", desc("Timeout per test run (milliseconds)"),
+                      Optional, value_desc("number"),
+                      init(mull::MullDefaultTimeoutMilliseconds));
 
 int main(int argc, char **argv) {
   bool validOptions =
@@ -30,8 +33,7 @@ int main(int argc, char **argv) {
   mull::MutatorsFactory factory(diagnostics);
   mull::Configuration configuration;
   configuration.debugEnabled = true;
-  configuration.linkerTimeout = mull::MullDefaultLinkerTimeoutMilliseconds;
-  configuration.timeout = mull::MullDefaultTimeoutMilliseconds;
+  configuration.timeout = Timeout;
   configuration.parallelization = mull::ParallelizationConfig::defaultConfig();
   diagnostics.enableDebugMode();
 

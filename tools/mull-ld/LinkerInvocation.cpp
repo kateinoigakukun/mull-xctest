@@ -8,10 +8,10 @@
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FileUtilities.h>
 #include <llvm/Support/Path.h>
+#include <mull/Filters/FunctionFilter.h>
 #include <mull/Filters/MutationFilter.h>
 #include <mull/Mutant.h>
 #include <mull/Mutators/MutatorsFactory.h>
-#include <mull/Filters/FunctionFilter.h>
 #include <mull/Parallelization/Parallelization.h>
 #include <mull/Parallelization/TaskExecutor.h>
 #include <mull/Program/Program.h>
@@ -118,8 +118,8 @@ void LinkerInvocation::run() {
   link(objectFiles);
 }
 
-
-std::vector<mull::FunctionUnderTest> LinkerInvocation::getFunctionsUnderTest(Program &program) {
+std::vector<mull::FunctionUnderTest>
+LinkerInvocation::getFunctionsUnderTest(Program &program) {
   std::vector<FunctionUnderTest> functionsUnderTest;
   for (auto &bitcode : program.bitcode()) {
     for (llvm::Function &function : *bitcode->getModule()) {
@@ -129,31 +129,35 @@ std::vector<mull::FunctionUnderTest> LinkerInvocation::getFunctionsUnderTest(Pro
   return functionsUnderTest;
 }
 
-std::vector<mull::FunctionUnderTest> LinkerInvocation::filterFunctions(std::vector<mull::FunctionUnderTest> functions) {
-    std::vector<FunctionUnderTest> filteredFunctions(std::move(functions));
+std::vector<mull::FunctionUnderTest> LinkerInvocation::filterFunctions(
+    std::vector<mull::FunctionUnderTest> functions) {
+  std::vector<FunctionUnderTest> filteredFunctions(std::move(functions));
 
-    for (auto filter : filters.functionFilters) {
-      std::vector<FunctionFilterTask> tasks;
-      tasks.reserve(config.parallelization.workers);
-      for (int i = 0; i < config.parallelization.workers; i++) {
-        tasks.emplace_back(*filter);
-      }
-
-      std::string label = std::string("Applying function filter: ") + filter->name();
-      std::vector<FunctionUnderTest> tmp;
-      TaskExecutor<FunctionFilterTask> filterRunner(
-          diagnostics, label, filteredFunctions, tmp, std::move(tasks));
-      filterRunner.execute();
-      filteredFunctions = std::move(tmp);
+  for (auto filter : filters.functionFilters) {
+    std::vector<FunctionFilterTask> tasks;
+    tasks.reserve(config.parallelization.workers);
+    for (int i = 0; i < config.parallelization.workers; i++) {
+      tasks.emplace_back(*filter);
     }
 
-    return filteredFunctions;
+    std::string label =
+        std::string("Applying function filter: ") + filter->name();
+    std::vector<FunctionUnderTest> tmp;
+    TaskExecutor<FunctionFilterTask> filterRunner(
+        diagnostics, label, filteredFunctions, tmp, std::move(tasks));
+    filterRunner.execute();
+    filteredFunctions = std::move(tmp);
+  }
+
+  return filteredFunctions;
 }
 
 std::vector<MutationPoint *>
 LinkerInvocation::findMutationPoints(Program &program) {
-  std::vector<FunctionUnderTest> functionsUnderTest = getFunctionsUnderTest(program);
-  std::vector<FunctionUnderTest> filteredFunctions = filterFunctions(functionsUnderTest);
+  std::vector<FunctionUnderTest> functionsUnderTest =
+      getFunctionsUnderTest(program);
+  std::vector<FunctionUnderTest> filteredFunctions =
+      filterFunctions(functionsUnderTest);
   selectInstructions(filteredFunctions);
   return std::move(mutationsFinder.getMutationPoints(diagnostics, program,
                                                      filteredFunctions));
