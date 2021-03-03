@@ -18,11 +18,10 @@ bool SourceStorage::hasMutation(const std::string &filePath, int line,
   return unitStorage->hasMutation(line, column, kind);
 }
 
-
-extern "C" void *mullHasSyntaxMutation(void *storage, int line, int column, int rawMutatorKind);
+extern "C" void *mullHasSyntaxMutation(void *storage, int line, int column,
+                                       int rawMutatorKind);
 extern "C" void *mullIndexSwiftSource(const unsigned char *sourcePath,
                                       int *errorCode);
-
 
 std::unique_ptr<SourceUnitStorage>
 SourceUnitStorage::create(SourceFilePath filePath) {
@@ -35,6 +34,8 @@ SourceUnitStorage::create(SourceFilePath filePath) {
   return std::make_unique<SourceUnitStorage>(opaqueStorage);
 }
 
-bool SourceUnitStorage::hasMutation(int line, int column, mull::MutatorKind kind) {
-    return mullHasSyntaxMutation(this->swiftStorage, line, column, static_cast<int>(kind));
+bool SourceUnitStorage::hasMutation(int line, int column,
+                                    mull::MutatorKind kind) {
+  return mullHasSyntaxMutation(this->swiftStorage, line, column,
+                               static_cast<int>(kind));
 }

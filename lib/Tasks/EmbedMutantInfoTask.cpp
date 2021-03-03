@@ -1,6 +1,6 @@
 #include "MullXCTest/Tasks/EmbedMutantInfoTask.h"
-#include "MullXCTest/MutantSerialization.h"
 #include "MullXCTest/MutantMetadata.h"
+#include "MullXCTest/MutantSerialization.h"
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/ValueHandle.h>
 #include <mull/MutationPoint.h>

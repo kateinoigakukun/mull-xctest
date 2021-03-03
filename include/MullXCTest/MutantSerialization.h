@@ -2,8 +2,8 @@
 #define MULL_XCTEST_MUTANT_SERIALIZATION_H
 
 #include <llvm/ADT/StringRef.h>
-#include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/Error.h>
+#include <llvm/Support/raw_ostream.h>
 #include <mull/Mutant.h>
 #include <mull/Mutators/MutatorsFactory.h>
 
@@ -12,8 +12,7 @@ namespace mull_xctest {
 using MutantList = std::vector<std::unique_ptr<mull::Mutant>>;
 
 llvm::Expected<MutantList> ExtractMutantInfo(
-    std::string binaryPath,
-    mull::MutatorsFactory &factory,
+    std::string binaryPath, mull::MutatorsFactory &factory,
     std::vector<std::unique_ptr<mull::Mutator>> &mutators,
     std::vector<std::unique_ptr<mull::MutationPoint>> &pointsOwner);
 

@@ -11,9 +11,8 @@ namespace swift {
 
 class SyntaxMutationFilter : public mull::MutationFilter {
 public:
-  SyntaxMutationFilter(mull::Diagnostics &diagnostics,
-                       SourceStorage storage)
-    : diagnostics(diagnostics), storage(std::move(storage)) {}
+  SyntaxMutationFilter(mull::Diagnostics &diagnostics, SourceStorage storage)
+      : diagnostics(diagnostics), storage(std::move(storage)) {}
   bool shouldSkip(mull::MutationPoint *point) override;
   std::string name() override;
 

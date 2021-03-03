@@ -1,6 +1,6 @@
-#include <mull/MutationPoint.h>
-#include <llvm/IR/Instruction.h>
 #include "MullXCTest/SwiftSupport/SyntaxMutationFilter.h"
+#include <llvm/IR/Instruction.h>
+#include <mull/MutationPoint.h>
 
 #include <cassert>
 
@@ -11,9 +11,10 @@ std::string SyntaxMutationFilter::name() {
 }
 
 bool SyntaxMutationFilter::shouldSkip(mull::MutationPoint *point) {
-  llvm::Instruction *instruction = llvm::dyn_cast<llvm::Instruction>(point->getOriginalValue());
+  llvm::Instruction *instruction =
+      llvm::dyn_cast<llvm::Instruction>(point->getOriginalValue());
   assert(instruction);
-  
+
   const llvm::DebugLoc &debugInfo = instruction->getDebugLoc();
   if (!debugInfo) {
     return true;
@@ -26,7 +27,9 @@ bool SyntaxMutationFilter::shouldSkip(mull::MutationPoint *point) {
     assert(0 && "ASTMutationFilter: Unknown edge case.");
   }
 
-  auto sourceLocation = mull::SourceLocation::locationFromInstruction(instruction);
-  return !storage.hasMutation(sourceLocation.filePath, sourceLocation.line, sourceLocation.column,
+  auto sourceLocation =
+      mull::SourceLocation::locationFromInstruction(instruction);
+  return !storage.hasMutation(sourceLocation.filePath, sourceLocation.line,
+                              sourceLocation.column,
                               point->getMutator()->mutatorKind());
 }

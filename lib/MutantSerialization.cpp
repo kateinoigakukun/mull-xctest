@@ -1,8 +1,8 @@
 #include "MullXCTest/MutantSerialization.h"
 #include "MullXCTest/MutantMetadata.h"
-#include <llvm/Support/Endian.h>
 #include <llvm/Object/Binary.h>
 #include <llvm/Object/MachO.h>
+#include <llvm/Support/Endian.h>
 #include <mull/MutationPoint.h>
 #include <mull/Mutators/Mutator.h>
 
@@ -92,8 +92,7 @@ std::unique_ptr<mull::MutationPoint> MutantDeserializer::deserialize() {
 }
 
 llvm::Expected<MutantList> mull_xctest::ExtractMutantInfo(
-    std::string binaryPath,
-    mull::MutatorsFactory &factory,
+    std::string binaryPath, mull::MutatorsFactory &factory,
     std::vector<std::unique_ptr<mull::Mutator>> &mutators,
     std::vector<std::unique_ptr<mull::MutationPoint>> &pointsOwner) {
 
@@ -105,7 +104,9 @@ llvm::Expected<MutantList> mull_xctest::ExtractMutantInfo(
   const auto *machOObjectFile =
       dyn_cast<object::MachOObjectFile>(binaryOrErr->getBinary());
   if (!machOObjectFile) {
-    return llvm::make_error<StringError>(Twine("input file is not mach-o object file"), llvm::inconvertibleErrorCode());
+    return llvm::make_error<StringError>(
+        Twine("input file is not mach-o object file"),
+        llvm::inconvertibleErrorCode());
   }
   Expected<object::SectionRef> section =
       machOObjectFile->getSection(MULL_MUTANTS_INFO_SECTION_NAME_STR);
@@ -123,7 +124,9 @@ llvm::Expected<MutantList> mull_xctest::ExtractMutantInfo(
   while (!deserializer.isEOF()) {
     std::unique_ptr<mull::MutationPoint> point = deserializer.deserialize();
     if (!point) {
-      return llvm::make_error<StringError>(Twine("failed to deserialize mutants."), llvm::inconvertibleErrorCode());
+      return llvm::make_error<StringError>(
+          Twine("failed to deserialize mutants."),
+          llvm::inconvertibleErrorCode());
     }
 
     std::string id = point->getUserIdentifier();

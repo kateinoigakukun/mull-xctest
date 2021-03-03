@@ -9,7 +9,6 @@
 namespace mull_xctest {
 namespace swift {
 
-
 class SyntaxMutationFinder {
 public:
   SourceStorage findMutations(std::set<SourceFilePath> &sources,
