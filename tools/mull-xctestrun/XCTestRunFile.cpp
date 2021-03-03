@@ -1,15 +1,16 @@
 #include "XCTestRunFile.h"
-#include <llvm/Support/Program.h>
-#include <llvm/Support/MemoryBuffer.h>
 #include <llvm/ADT/SmallString.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FileUtilities.h>
 #include <llvm/Support/JSON.h>
+#include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/Path.h>
+#include <llvm/Support/Program.h>
 
 using namespace mull_xctest;
 
-static llvm::Optional<std::string> execCommand(llvm::StringRef exec, llvm::ArrayRef<llvm::StringRef> Argv) {
+static llvm::Optional<std::string>
+execCommand(llvm::StringRef exec, llvm::ArrayRef<llvm::StringRef> Argv) {
   llvm::SmallString<64> OutFile;
   llvm::sys::fs::createTemporaryFile("mull-xctestrun-pb", "", OutFile);
   llvm::FileRemover OutRemover(OutFile);
@@ -45,20 +46,25 @@ static void escapeColon(std::string &value) {
   }
 }
 
-bool XCTestRunFile::addEnvironmentVariable(std::string targetName, const std::string &key, const std::string &value) {
+bool XCTestRunFile::addEnvironmentVariable(std::string targetName,
+                                           const std::string &key,
+                                           const std::string &value) {
   std::string keyPath = targetName + ".TestingEnvironmentVariables." + key;
   std::string escapedKey = key;
   escapeColon(escapedKey);
-  std::string command = "Add " + targetName + ":TestingEnvironmentVariables:" + escapedKey + " string 1";
-  int Ret = llvm::sys::ExecuteAndWait("/usr/libexec/PlistBuddy", { "/usr/libexec/PlistBuddy", "-x", "-c", command, filePath },
-                                      /*Env=*/llvm::None, llvm::None,
-                                      /*SecondsToWait=*/10);
+  std::string command = "Add " + targetName +
+                        ":TestingEnvironmentVariables:" + escapedKey +
+                        " string 1";
+  int Ret = llvm::sys::ExecuteAndWait(
+      "/usr/libexec/PlistBuddy",
+      {"/usr/libexec/PlistBuddy", "-x", "-c", command, filePath},
+      /*Env=*/llvm::None, llvm::None,
+      /*SecondsToWait=*/10);
   if (Ret != 0) {
     return true;
   }
   return false;
 }
-
 
 llvm::Expected<std::vector<std::string>>
 XCTestRunFile::getDependentProductPaths(std::string targetName) {
@@ -66,19 +72,24 @@ XCTestRunFile::getDependentProductPaths(std::string targetName) {
   llvm::SmallString<64> outFile;
   llvm::sys::fs::createTemporaryFile("mull-xctestrun-pb", "", outFile);
   llvm::FileRemover outRemover(outFile);
-  llvm::ArrayRef<llvm::StringRef> args = { "/usr/bin/plutil", "-extract", keyPath, "json", filePath, "-o", outFile };
+  llvm::ArrayRef<llvm::StringRef> args = {
+      "/usr/bin/plutil", "-extract", keyPath, "json", filePath, "-o", outFile};
   int Ret = llvm::sys::ExecuteAndWait("/usr/bin/plutil", args,
                                       /*Env=*/llvm::None, {},
                                       /*SecondsToWait=*/10);
   if (Ret != 0) {
-    return llvm::make_error<llvm::StringError>("failed to extract product paths from xctestrun file.", llvm::inconvertibleErrorCode());
+    return llvm::make_error<llvm::StringError>(
+        "failed to extract product paths from xctestrun file.",
+        llvm::inconvertibleErrorCode());
   }
   auto fileBuf = llvm::MemoryBuffer::getFile(outFile);
   if (!fileBuf) {
-    return llvm::make_error<llvm::StringError>("failed open plutil result file", fileBuf.getError());
+    return llvm::make_error<llvm::StringError>("failed open plutil result file",
+                                               fileBuf.getError());
   }
 
-  llvm::Expected<llvm::json::Value> result = llvm::json::parse(fileBuf.get()->getBuffer());
+  llvm::Expected<llvm::json::Value> result =
+      llvm::json::parse(fileBuf.get()->getBuffer());
   if (!result) {
     return result.takeError();
   }

@@ -38,19 +38,17 @@ opt<bool> DebugEnabled("debug",
                        desc("Enables Debug Mode: more logs are printed"),
                        Optional, init(false), cat(MullLDCategory));
 
-opt<std::string> DumpLLVM("dump-llvm",
-                          desc("Dump intermediate LLVM IRs in the specified directory"),
-                          Optional, cat(MullLDCategory));
+opt<std::string>
+    DumpLLVM("dump-llvm",
+             desc("Dump intermediate LLVM IRs in the specified directory"),
+             Optional, cat(MullLDCategory));
 
 opt<bool> EnableSyntaxFilter("enable-syntax",
-                             desc("Enables syntax filter for Swift"),
-                             Optional, init(true), cat(MullLDCategory));
+                             desc("Enables syntax filter for Swift"), Optional,
+                             init(true), cat(MullLDCategory));
 
-opt<unsigned> Workers("workers",
-                      desc("How many threads to use"),
-                      Optional,
-                      value_desc("number"),
-                      cat(MullLDCategory));
+opt<unsigned> Workers("workers", desc("How many threads to use"), Optional,
+                      value_desc("number"), cat(MullLDCategory));
 
 void extractBitcodeFiles(std::vector<std::string> &args,
                          std::vector<llvm::StringRef> &bitcodeFiles) {
@@ -129,16 +127,18 @@ void bootstrapConfiguration(mull::Configuration &configuration,
   configuration.timeout = mull::MullDefaultTimeoutMilliseconds;
 }
 
-void bootstrapInvocationConfiguration(mull_xctest::InvocationConfig &configuration,
-                                      mull::Diagnostics &diagnostics) {
-  if(DumpLLVM.empty()) {
+void bootstrapInvocationConfiguration(
+    mull_xctest::InvocationConfig &configuration,
+    mull::Diagnostics &diagnostics) {
+  if (DumpLLVM.empty()) {
     configuration.DumpLLVM = llvm::None;
   } else {
     configuration.DumpLLVM = DumpLLVM;
   }
   configuration.EnableSyntaxFilter = EnableSyntaxFilter;
   if (EnableSyntaxFilter.hasArgStr()) {
-    std::string status = configuration.EnableSyntaxFilter ? "enabled" : "disabled";
+    std::string status =
+        configuration.EnableSyntaxFilter ? "enabled" : "disabled";
     diagnostics.debug("syntax filter is " + status);
   }
 }
@@ -187,10 +187,11 @@ int main(int argc, char **argv) {
   bootstrapFilters(filters, diagnostics, filterStorage);
   mull::MutatorsFactory factory(diagnostics);
   std::vector<std::string> groups = {
-    "cxx_comparison", "cxx_arithmetic", "cxx_arithmetic_assignment",
-    "cxx_boundary", "swift_logical",
+      "cxx_comparison", "cxx_arithmetic", "cxx_arithmetic_assignment",
+      "cxx_boundary",   "swift_logical",
   };
-  mull::MutationsFinder mutationsFinder(factory.mutators(groups), configuration);
+  mull::MutationsFinder mutationsFinder(factory.mutators(groups),
+                                        configuration);
 
   mull_xctest::LinkerInvocation invocation(
       inputObjects, filters, mutationsFinder, options, diagnostics,

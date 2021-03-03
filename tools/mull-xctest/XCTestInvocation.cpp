@@ -51,7 +51,7 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
     storage.push_back(std::make_unique<MutationResult>(result, mutant.get()));
   }
 }
-}
+} // namespace
 
 std::unique_ptr<Result> XCTestInvocation::run() {
   auto xcrun = "/usr/bin/xcrun";
@@ -96,7 +96,8 @@ MutantList XCTestInvocation::extractMutantInfo(
   SmallString<64> binaryPath(testBundle);
   llvm::sys::path::append(binaryPath, "Contents", "MacOS", basename);
 
-  auto result = ExtractMutantInfo(binaryPath.str().str(), factory, mutators, pointsOwner);
+  auto result =
+      ExtractMutantInfo(binaryPath.str().str(), factory, mutators, pointsOwner);
   if (!result) {
     llvm::consumeError(result.takeError());
     return {};

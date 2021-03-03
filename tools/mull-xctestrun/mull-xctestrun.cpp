@@ -5,7 +5,6 @@
 #include <mull/Reporters/IDEReporter.h>
 #include <mull/Version.h>
 #include <vector>
-#include <libxml/xmlversion.h>
 
 using namespace llvm::cl;
 using namespace llvm;
@@ -13,11 +12,9 @@ using namespace llvm;
 opt<std::string> TestRunFile(Positional, desc("<xctestrun file>"), Required,
                              value_desc("path"));
 
-list<std::string> XcodeBuildArgs(
-  "Xxcodebuild",
-  desc("Pass <arg> to the xcodebuild"),
-  ZeroOrMore,
-  value_desc("arg"));
+list<std::string> XcodeBuildArgs("Xxcodebuild",
+                                 desc("Pass <arg> to the xcodebuild"),
+                                 ZeroOrMore, value_desc("arg"));
 
 opt<std::string> TestTarget("test-target", desc("test target name"), Required,
                             value_desc("name"));
@@ -29,8 +26,6 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  LIBXML_TEST_VERSION
-
   mull::Diagnostics diagnostics;
   mull::MutatorsFactory factory(diagnostics);
   mull::Configuration configuration;
@@ -41,9 +36,9 @@ int main(int argc, char **argv) {
   diagnostics.enableDebugMode();
 
   factory.init();
-  mull_xctest::XCTestRunInvocation invocation(TestRunFile, TestTarget, XcodeBuildArgs,
-                                              factory, diagnostics,
-                                              configuration);
+  mull_xctest::XCTestRunInvocation invocation(TestRunFile, TestTarget,
+                                              XcodeBuildArgs, factory,
+                                              diagnostics, configuration);
   mull::IDEReporter reporter(diagnostics);
   auto results = invocation.run();
   reporter.reportResults(*results);

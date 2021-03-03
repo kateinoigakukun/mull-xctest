@@ -1,7 +1,7 @@
 #include "LinkerOptions.h"
 #include <llvm/Option/ArgList.h>
-#include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/Error.h>
+#include <llvm/Support/MemoryBuffer.h>
 
 using namespace llvm;
 using namespace llvm::opt;
@@ -36,7 +36,6 @@ static const ::llvm::opt::OptTable::Info optInfo[] = {
 
 LD64OptTable::LD64OptTable() : LinkerOptTable(ld64::optInfo) {}
 
-
 /// \returns true if an error occurred.
 static bool readFilelistFile(llvm::StringRef filepath,
                              std::vector<std::string> &output) {
@@ -45,16 +44,16 @@ static bool readFilelistFile(llvm::StringRef filepath,
     return true;
   }
   SmallVector<StringRef, 4> lines;
-  filelistOrErr.get()->getBuffer().split(lines, '\n',/*MaxSplit*/ -1,/*KeepEmpty*/ false);
+  filelistOrErr.get()->getBuffer().split(lines, '\n', /*MaxSplit*/ -1,
+                                         /*KeepEmpty*/ false);
   for (auto line : lines) {
     output.push_back(line.rtrim().str());
   }
   return false;
 }
 
-void LD64OptTable::collectObjectFiles(
-    const llvm::opt::InputArgList &args,
-    std::vector<std::string> &objectFiles) {
+void LD64OptTable::collectObjectFiles(const llvm::opt::InputArgList &args,
+                                      std::vector<std::string> &objectFiles) {
   for (auto input : args.filtered(ld64::OPT_INPUT)) {
     objectFiles.push_back(input->getValue());
   }
@@ -84,7 +83,8 @@ void LD64OptTable::collectObjectLinkOpts(const llvm::opt::InputArgList &args,
   }
 }
 
-void LD64OptTable::appendFilelist(const std::string filelist, std::vector<std::string> &output) {
+void LD64OptTable::appendFilelist(const std::string filelist,
+                                  std::vector<std::string> &output) {
   output.push_back("-filelist");
   output.push_back(filelist);
 }
@@ -117,9 +117,8 @@ static const ::llvm::opt::OptTable::Info optInfo[] = {
 
 ClangOptTable::ClangOptTable() : LinkerOptTable(clang::optInfo) {}
 
-void ClangOptTable::collectObjectFiles(
-    const llvm::opt::InputArgList &args,
-    std::vector<std::string> &objectFiles) {
+void ClangOptTable::collectObjectFiles(const llvm::opt::InputArgList &args,
+                                       std::vector<std::string> &objectFiles) {
   for (auto input : args.filtered(clang::OPT_INPUT)) {
     objectFiles.push_back(input->getValue());
   }
@@ -138,8 +137,8 @@ void ClangOptTable::collectObjectLinkOpts(const llvm::opt::InputArgList &args,
   }
 }
 
-
-void ClangOptTable::appendFilelist(const std::string filelist, std::vector<std::string> &output) {
+void ClangOptTable::appendFilelist(const std::string filelist,
+                                   std::vector<std::string> &output) {
   output.push_back("-filelist");
   output.push_back(filelist);
 }

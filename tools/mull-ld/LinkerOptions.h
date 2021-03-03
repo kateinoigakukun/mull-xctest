@@ -18,7 +18,8 @@ public:
                                   std::vector<std::string> &) = 0;
   virtual void collectObjectLinkOpts(const llvm::opt::InputArgList &,
                                      llvm::opt::ArgStringList &output) = 0;
-  virtual void appendFilelist(const std::string filelist, std::vector<std::string> &output) = 0;
+  virtual void appendFilelist(const std::string filelist,
+                              std::vector<std::string> &output) = 0;
 };
 
 LinkerOptTable *GetLinkerOptTable(std::string flavor);
@@ -38,7 +39,8 @@ public:
   void collectObjectLinkOpts(llvm::opt::ArgStringList &output) {
     optTable.collectObjectLinkOpts(args, output);
   }
-  void appendFilelist(const std::string filelist, std::vector<std::string> &output) {
+  void appendFilelist(const std::string filelist,
+                      std::vector<std::string> &output) {
     optTable.appendFilelist(filelist, output);
   }
 };
@@ -51,7 +53,8 @@ public:
                                   std::vector<std::string> &) override;
   virtual void collectObjectLinkOpts(const llvm::opt::InputArgList &,
                                      llvm::opt::ArgStringList &output) override;
-  virtual void appendFilelist(const std::string filelist, std::vector<std::string> &output) override;
+  virtual void appendFilelist(const std::string filelist,
+                              std::vector<std::string> &output) override;
 };
 
 namespace ld64 {
@@ -72,7 +75,8 @@ public:
                                   std::vector<std::string> &) override;
   virtual void collectObjectLinkOpts(const llvm::opt::InputArgList &,
                                      llvm::opt::ArgStringList &output) override;
-  virtual void appendFilelist(const std::string filelist, std::vector<std::string> &output) override;
+  virtual void appendFilelist(const std::string filelist,
+                              std::vector<std::string> &output) override;
 };
 
 namespace clang {
