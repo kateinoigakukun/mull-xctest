@@ -72,7 +72,7 @@ XCTestRunFile::getDependentProductPaths(std::string targetName) {
   auto *productPaths = result->getAsArray();
   assert(productPaths);
 
-  
+  std::vector<std::string> results;
   llvm::SmallString<128> testRoot(filePath);
   llvm::sys::path::remove_filename(testRoot);
   std::map<std::string, std::string> metaSymMap;
@@ -93,5 +93,7 @@ XCTestRunFile::getDependentProductPaths(std::string targetName) {
         pos += replacement.length();
       }
     }
+    results.push_back(stringVal);
   }
+  return std::move(results);
 }
