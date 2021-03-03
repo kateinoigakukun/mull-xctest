@@ -3,10 +3,19 @@
 
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/raw_ostream.h>
+#include <llvm/Support/Error.h>
 #include <mull/Mutant.h>
 #include <mull/Mutators/MutatorsFactory.h>
 
 namespace mull_xctest {
+
+using MutantList = std::vector<std::unique_ptr<mull::Mutant>>;
+
+llvm::Expected<MutantList> ExtractMutantInfo(
+    std::string binaryPath,
+    mull::MutatorsFactory &factory,
+    std::vector<std::unique_ptr<mull::Mutator>> &mutators,
+    std::vector<std::unique_ptr<mull::MutationPoint>> &pointsOwner);
 
 class MutantSerializer {
   llvm::raw_ostream &output;

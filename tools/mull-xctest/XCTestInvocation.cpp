@@ -1,19 +1,16 @@
 #include "XCTestInvocation.h"
-#include "MullXCTest/MutantMetadata.h"
 #include "MullXCTest/MutantSerialization.h"
-#include <llvm/Object/Binary.h>
-#include <llvm/Object/MachO.h>
 #include <llvm/Support/Path.h>
 #include <mull/MutationResult.h>
 #include <mull/Parallelization/Parallelization.h>
 #include <mull/Toolchain/Runner.h>
-#include <set>
-#include <sstream>
 
 using namespace llvm;
 using namespace mull;
 
 namespace mull_xctest {
+
+namespace {
 
 class MutantExecutionTask {
 public:
@@ -54,6 +51,7 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
     storage.push_back(std::make_unique<MutationResult>(result, mutant.get()));
   }
 }
+}
 
 std::unique_ptr<Result> XCTestInvocation::run() {
   auto xcrun = "/usr/bin/xcrun";
@@ -89,7 +87,7 @@ std::unique_ptr<Result> XCTestInvocation::run() {
       std::move(mutants), std::move(mutationResults), filteredMutations);
 }
 
-std::vector<std::unique_ptr<mull::Mutant>> XCTestInvocation::extractMutantInfo(
+MutantList XCTestInvocation::extractMutantInfo(
     std::vector<std::unique_ptr<mull::Mutator>> &mutators,
     std::vector<std::unique_ptr<mull::MutationPoint>> &pointsOwner) {
 
@@ -98,54 +96,12 @@ std::vector<std::unique_ptr<mull::Mutant>> XCTestInvocation::extractMutantInfo(
   SmallString<64> binaryPath(testBundle);
   llvm::sys::path::append(binaryPath, "Contents", "MacOS", basename);
 
-  auto binaryOrErr = object::createBinary(binaryPath);
-  if (!binaryOrErr) {
-    std::stringstream errorMessage;
-    errorMessage << "createBinary failed: \""
-                 << toString(binaryOrErr.takeError()) << "\".";
-    diagnostics.error(errorMessage.str());
+  auto result = ExtractMutantInfo(binaryPath.str().str(), factory, mutators, pointsOwner);
+  if (!result) {
+    llvm::consumeError(result.takeError());
     return {};
   }
-  const auto *machOObjectFile =
-      dyn_cast<object::MachOObjectFile>(binaryOrErr->getBinary());
-  if (!machOObjectFile) {
-    diagnostics.error("input file is not mach-o object file");
-    return {};
-  }
-  Expected<object::SectionRef> section =
-      machOObjectFile->getSection(MULL_MUTANTS_INFO_SECTION_NAME_STR);
-  if (!section) {
-    llvm::consumeError(section.takeError());
-    return {};
-  }
-
-  Expected<StringRef> contentsData = section->getContents();
-  if (!contentsData) {
-    std::stringstream errorMessage;
-    errorMessage << "section->getContents failed: \""
-                 << toString(contentsData.takeError()) << "\".";
-    diagnostics.error(errorMessage.str());
-  }
-  MutantDeserializer deserializer(contentsData.get(), factory);
-
-  std::vector<std::unique_ptr<mull::Mutant>> mutants;
-  while (!deserializer.isEOF()) {
-    std::unique_ptr<mull::MutationPoint> point = deserializer.deserialize();
-    if (!point) {
-      diagnostics.error("failed to deserialize mutants.");
-      break;
-    }
-    // FIXME: Filter compiler-generated code before modification
-    if (point->getSourceLocation().isNull()) {
-      continue;
-    }
-    std::string id = point->getUserIdentifier();
-    pointsOwner.push_back(std::move(point));
-    std::vector<mull::MutationPoint *> points;
-    points.push_back(pointsOwner.back().get());
-    mutants.push_back(std::make_unique<Mutant>(id, points));
-  }
-  return std::move(mutants);
+  return std::move(result.get());
 }
 
 }; // namespace mull_xctest

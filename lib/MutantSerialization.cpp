@@ -1,7 +1,12 @@
 #include "MullXCTest/MutantSerialization.h"
+#include "MullXCTest/MutantMetadata.h"
 #include <llvm/Support/Endian.h>
+#include <llvm/Object/Binary.h>
+#include <llvm/Object/MachO.h>
 #include <mull/MutationPoint.h>
 #include <mull/Mutators/Mutator.h>
+
+#include <sstream>
 
 using namespace mull_xctest;
 
@@ -84,4 +89,48 @@ std::unique_ptr<mull::MutationPoint> MutantDeserializer::deserialize() {
 
   return std::make_unique<mull::MutationPoint>(mutator, replacement, loc,
                                                diagnostics);
+}
+
+llvm::Expected<MutantList> mull_xctest::ExtractMutantInfo(
+    std::string binaryPath,
+    mull::MutatorsFactory &factory,
+    std::vector<std::unique_ptr<mull::Mutator>> &mutators,
+    std::vector<std::unique_ptr<mull::MutationPoint>> &pointsOwner) {
+
+  using namespace llvm;
+  auto binaryOrErr = object::createBinary(binaryPath);
+  if (!binaryOrErr) {
+    return binaryOrErr.takeError();
+  }
+  const auto *machOObjectFile =
+      dyn_cast<object::MachOObjectFile>(binaryOrErr->getBinary());
+  if (!machOObjectFile) {
+    return llvm::make_error<StringError>(Twine("input file is not mach-o object file"), llvm::inconvertibleErrorCode());
+  }
+  Expected<object::SectionRef> section =
+      machOObjectFile->getSection(MULL_MUTANTS_INFO_SECTION_NAME_STR);
+  if (!section) {
+    return section.takeError();
+  }
+
+  Expected<StringRef> contentsData = section->getContents();
+  if (!contentsData) {
+    return contentsData.takeError();
+  }
+  MutantDeserializer deserializer(contentsData.get(), factory);
+
+  std::vector<std::unique_ptr<mull::Mutant>> mutants;
+  while (!deserializer.isEOF()) {
+    std::unique_ptr<mull::MutationPoint> point = deserializer.deserialize();
+    if (!point) {
+      return llvm::make_error<StringError>(Twine("failed to deserialize mutants."), llvm::inconvertibleErrorCode());
+    }
+
+    std::string id = point->getUserIdentifier();
+    pointsOwner.push_back(std::move(point));
+    std::vector<mull::MutationPoint *> points;
+    points.push_back(pointsOwner.back().get());
+    mutants.push_back(std::make_unique<mull::Mutant>(id, points));
+  }
+  return std::move(mutants);
 }
