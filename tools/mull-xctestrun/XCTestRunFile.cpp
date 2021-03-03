@@ -35,9 +35,22 @@ static llvm::Optional<std::string> execCommand(llvm::StringRef exec, llvm::Array
   return Path.str();
 }
 
+static void escapeColon(std::string &value) {
+  std::string colon = ":";
+  std::string replacement = "\\:";
+  std::string::size_type pos = 0;
+  while ((pos = value.find(colon, pos)) != std::string::npos) {
+    value.replace(pos, colon.length(), replacement);
+    pos += replacement.length();
+  }
+}
+
 bool XCTestRunFile::addEnvironmentVariable(std::string targetName, const std::string &key, const std::string &value) {
   std::string keyPath = targetName + ".TestingEnvironmentVariables." + key;
-  int Ret = llvm::sys::ExecuteAndWait("/usr/bin/plutil", { "-insert", keyPath, "-string", value, filePath },
+  std::string escapedKey = key;
+  escapeColon(escapedKey);
+  std::string command = "Add " + targetName + ":TestingEnvironmentVariables:" + escapedKey + " string 1";
+  int Ret = llvm::sys::ExecuteAndWait("/usr/libexec/PlistBuddy", { "/usr/libexec/PlistBuddy", "-x", "-c", command, filePath },
                                       /*Env=*/llvm::None, llvm::None,
                                       /*SecondsToWait=*/10);
   if (Ret != 0) {
@@ -53,8 +66,9 @@ XCTestRunFile::getDependentProductPaths(std::string targetName) {
   llvm::SmallString<64> outFile;
   llvm::sys::fs::createTemporaryFile("mull-xctestrun-pb", "", outFile);
   llvm::FileRemover outRemover(outFile);
-  int Ret = llvm::sys::ExecuteAndWait("/usr/bin/plutil", { "-extract", keyPath, "json", filePath, "-o", outFile },
-                                      /*Env=*/llvm::None, llvm::None,
+  llvm::ArrayRef<llvm::StringRef> args = { "/usr/bin/plutil", "-extract", keyPath, "json", filePath, "-o", outFile };
+  int Ret = llvm::sys::ExecuteAndWait("/usr/bin/plutil", args,
+                                      /*Env=*/llvm::None, {},
                                       /*SecondsToWait=*/10);
   if (Ret != 0) {
     return llvm::make_error<llvm::StringError>("failed to extract product paths from xctestrun file.", llvm::inconvertibleErrorCode());

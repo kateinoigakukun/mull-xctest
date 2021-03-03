@@ -35,6 +35,8 @@ ExecutionResult RunXcodeBuildTest(Runner &runner, const std::string &xctestrunFi
   std::vector<std::string> arguments;
   arguments.push_back("test-without-building");
   std::copy(extraArgs.begin(), extraArgs.end(), std::back_inserter(arguments));
+  arguments.push_back("-xctestrun");
+  arguments.push_back(xctestrunFile);
   return runner.runProgram("/usr/bin/xcodebuild",
                            arguments, environment, timeout, captureOutput);
 }
@@ -131,10 +133,10 @@ std::vector<std::unique_ptr<mull::Mutant>> XCTestRunInvocation::extractMutantInf
   std::vector<std::unique_ptr<mull::Mutant>> output;
   for (auto product : *products) {
     auto binaryPath = GetBundleBinaryPath(product);
+    llvm::dbgs() << "GetBundleBinaryPath result: " << binaryPath << "\n";
     auto result = ExtractMutantInfo(binaryPath, factory, mutators, pointsOwner);
     if (!result) {
-      diagnostics.error(llvm::toString(result.takeError()));
-      return {};
+      continue;
     }
     std::move(result->begin(), result->end(), std::back_inserter(output));
   }
