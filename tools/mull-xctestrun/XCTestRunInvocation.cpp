@@ -142,7 +142,6 @@ XCTestRunInvocation::extractMutantInfo(
   std::vector<std::unique_ptr<mull::Mutant>> output;
   for (auto product : *products) {
     auto binaryPath = GetBundleBinaryPath(product);
-    llvm::dbgs() << "GetBundleBinaryPath result: " << binaryPath << "\n";
     auto result = ExtractMutantInfo(binaryPath, factory, mutators, pointsOwner);
     if (!result) {
       continue;

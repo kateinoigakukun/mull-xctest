@@ -50,6 +50,20 @@ opt<bool> EnableSyntaxFilter("enable-syntax",
 opt<unsigned> Workers("workers", desc("How many threads to use"), Optional,
                       value_desc("number"), cat(MullLDCategory));
 
+list<std::string> ExcludePaths(
+  "exclude-path",
+  desc("File/directory paths to ignore (supports regex)"),
+  ZeroOrMore,
+  value_desc("regex"),
+  cat(MullLDCategory));
+
+list<std::string> IncludePaths(
+  "include-path",
+  desc("File/directory paths to whitelist (supports regex)"),
+  ZeroOrMore,
+  value_desc("regex"),
+  cat(MullLDCategory));
+
 void extractBitcodeFiles(std::vector<std::string> &args,
                          std::vector<llvm::StringRef> &bitcodeFiles) {
   for (const auto &rawArg : args) {
@@ -110,6 +124,13 @@ void bootstrapFilters(
 
   filters.mutationFilters.push_back(filePathFilter);
   filters.functionFilters.push_back(filePathFilter);
+
+  for (const auto &regex : ExcludePaths) {
+    filePathFilter->exclude(regex);
+  }
+  for (const auto &regex : IncludePaths) {
+    filePathFilter->include(regex);
+  }
 }
 
 void bootstrapConfiguration(mull::Configuration &configuration,
