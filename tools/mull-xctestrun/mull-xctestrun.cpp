@@ -22,6 +22,9 @@ opt<unsigned> Timeout("timeout", desc("Timeout per test run (milliseconds)"),
                       Optional, value_desc("number"),
                       init(mull::MullDefaultTimeoutMilliseconds));
 
+opt<unsigned> Workers("workers", desc("How many threads to use"), Optional,
+                      value_desc("number"));
+
 int main(int argc, char **argv) {
   bool validOptions =
       llvm::cl::ParseCommandLineOptions(argc, argv, "", &llvm::errs());
@@ -35,6 +38,10 @@ int main(int argc, char **argv) {
   configuration.debugEnabled = true;
   configuration.timeout = Timeout;
   configuration.parallelization = mull::ParallelizationConfig::defaultConfig();
+  if (Workers) {
+    configuration.parallelization.workers = Workers;
+    configuration.parallelization.mutantExecutionWorkers = Workers;
+  }
   diagnostics.enableDebugMode();
 
   factory.init();

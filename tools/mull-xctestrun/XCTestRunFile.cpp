@@ -49,6 +49,7 @@ static void escapeColon(std::string &value) {
 bool XCTestRunFile::addEnvironmentVariable(std::string targetName,
                                            const std::string &key,
                                            const std::string &value) {
+  escapeColon(targetName);
   std::string keyPath = targetName + ".TestingEnvironmentVariables." + key;
   std::string escapedKey = key;
   escapeColon(escapedKey);
@@ -121,4 +122,19 @@ XCTestRunFile::getDependentProductPaths(std::string targetName) {
     results.push_back(stringVal);
   }
   return std::move(results);
+}
+
+bool XCTestRunFile::duplicateTestTarget(std::string srcTargetName, std::string newTargetName) {
+  escapeColon(srcTargetName);
+  escapeColon(newTargetName);
+  std::string command = "Copy " + srcTargetName + " " + newTargetName;
+  int Ret = llvm::sys::ExecuteAndWait(
+      "/usr/libexec/PlistBuddy",
+      {"/usr/libexec/PlistBuddy", "-x", "-c", command, filePath},
+      /*Env=*/llvm::None, llvm::None,
+      /*SecondsToWait=*/10);
+  if (Ret != 0) {
+    return true;
+  }
+  return false;
 }

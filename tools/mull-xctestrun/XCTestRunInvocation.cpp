@@ -41,6 +41,24 @@ ExecutionResult RunXcodeBuildTest(Runner &runner,
                            timeout, captureOutput);
 }
 
+using Mutants = const std::vector<std::unique_ptr<Mutant>>;
+
+std::string GenerateXCRunFile(const std::string &srcRunFile,
+                              const std::string &localRunFile,
+                              const std::string &srcTestTarget,
+                              const Mutants::const_iterator &mutants_begin,
+                              const Mutants::const_iterator &mutants_end) {
+  llvm::sys::fs::copy_file(srcRunFile, localRunFile);
+  XCTestRunFile runFile(localRunFile);
+  for (auto it = mutants_begin; it != mutants_end; ++it) {
+    auto &mutant = *it;
+    std::string newTarget = srcTestTarget + "-" + mutant->getIdentifier();
+    runFile.duplicateTestTarget(srcTestTarget, newTarget);
+    runFile.addEnvironmentVariable(newTarget, mutant->getIdentifier(), "1");
+  }
+  return localRunFile;
+}
+
 class MutantExecutionTask {
 public:
   using In = const std::vector<std::unique_ptr<Mutant>>;
@@ -73,22 +91,24 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
                                      progress_counter &counter) {
   Runner runner(diagnostics);
   const std::string localRunFile =
-      xctestrunFile + ".mull-xctrn-" + std::to_string(taskID);
+      xctestrunFile + ".mull-xctrn-" + std::to_string(taskID) + ".xctestrun";
+  
+  GenerateXCRunFile(xctestrunFile, localRunFile, targetName, begin, end);
+
   for (auto it = begin; it != end; ++it, counter.increment()) {
     auto &mutant = *it;
     ExecutionResult result;
     if (mutant->isCovered()) {
-      llvm::sys::fs::copy_file(xctestrunFile, localRunFile);
-      XCTestRunFile runFile(localRunFile);
-      runFile.addEnvironmentVariable(targetName, mutant->getIdentifier(), "1");
       result = RunXcodeBuildTest(runner, localRunFile, xcodebuildArgs, {},
-                                 baseline.runningTime * 10,
+                                 -1,
                                  configuration.captureMutantOutput);
+
     } else {
       result.status = NotCovered;
     }
-    storage.push_back(std::make_unique<MutationResult>(result, mutant.get()));
   }
+  // TODO: Retrieve results from .xcresult
+  // storage.push_back(std::make_unique<MutationResult>(result, mutant.get()));
 }
 
 } // namespace
@@ -96,11 +116,6 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
 std::unique_ptr<Result> XCTestRunInvocation::run() {
   auto mutants = extractMutantInfo(mutatorsOwner, allPoints);
   Runner runner(diagnostics);
-
-  singleTask.execute("Warm up run", [&]() {
-    RunXcodeBuildTest(runner, xctestrunFile.str(), xcodebuildArgs, {},
-                      config.timeout, config.captureMutantOutput);
-  });
 
   ExecutionResult baseline;
   singleTask.execute("Baseline run", [&]() {
