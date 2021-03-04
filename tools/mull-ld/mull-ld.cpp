@@ -60,6 +60,19 @@ list<std::string>
                  desc("File/directory paths to whitelist (supports regex)"),
                  ZeroOrMore, value_desc("regex"), cat(MullLDCategory));
 
+
+opt<std::string> CoverageInfo(
+    "coverage-info",
+    desc("Path to the coverage info file (LLVM's profdata)"),
+    value_desc("string"),
+    Optional,
+    init(std::string()), cat(MullLDCategory));
+
+list<std::string>
+    TargetExecutables("target-executable",
+                      desc("Executable file path to collect coverage info"),
+                      ZeroOrMore, value_desc("path"), cat(MullLDCategory));
+
 void extractBitcodeFiles(std::vector<std::string> &args,
                          std::vector<llvm::StringRef> &bitcodeFiles) {
   for (const auto &rawArg : args) {
@@ -142,6 +155,7 @@ void bootstrapConfiguration(mull::Configuration &configuration,
     configuration.parallelization = mull::ParallelizationConfig::defaultConfig();
   }
   configuration.debugEnabled = DebugEnabled;
+  configuration.coverageInfo = CoverageInfo;
   configuration.linkerTimeout = mull::MullDefaultLinkerTimeoutMilliseconds;
   configuration.timeout = mull::MullDefaultTimeoutMilliseconds;
 }
@@ -212,8 +226,9 @@ int main(int argc, char **argv) {
   mull::MutationsFinder mutationsFinder(factory.mutators(groups),
                                         configuration);
 
+  std::vector<llvm::StringRef> targetExecutables(TargetExecutables.begin(), TargetExecutables.end());
   mull_xctest::LinkerInvocation invocation(
-      inputObjects, filters, mutationsFinder, options, diagnostics,
+      inputObjects, targetExecutables, filters, mutationsFinder, options, diagnostics,
       configuration, invocationConfig);
   invocation.run();
   llvm::llvm_shutdown();

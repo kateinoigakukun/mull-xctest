@@ -22,6 +22,7 @@ struct InvocationConfig {
 
 class LinkerInvocation {
   std::vector<std::string> inputObjects;
+  const std::vector<llvm::StringRef> &targetExecutables;
   mull::Diagnostics &diagnostics;
   const mull::Configuration &config;
   const InvocationConfig &invocationConfig;
@@ -33,12 +34,14 @@ class LinkerInvocation {
 
 public:
   LinkerInvocation(std::vector<std::string> inputObjects,
+                   const std::vector<llvm::StringRef> &targetExecutables,
                    struct mull::Filters &filters,
                    mull::MutationsFinder &mutationsFinder,
                    LinkerOptions &originalArgs, mull::Diagnostics &diagnostics,
                    const mull::Configuration &config,
                    const InvocationConfig &invocationConfig)
-      : inputObjects(inputObjects), filters(filters),
+      : inputObjects(inputObjects), targetExecutables(targetExecutables),
+        filters(filters),
         mutationsFinder(mutationsFinder), linkerOpts(originalArgs),
         diagnostics(diagnostics), config(config), singleTask(diagnostics),
         invocationConfig(invocationConfig) {}

@@ -8,6 +8,7 @@
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FileUtilities.h>
 #include <llvm/Support/Path.h>
+#include <llvm/ProfileData/Coverage/CoverageMapping.h>
 #include <mull/Filters/FunctionFilter.h>
 #include <mull/Filters/MutationFilter.h>
 #include <mull/Mutant.h>
@@ -21,6 +22,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 using namespace mull_xctest;
 using namespace mull;
@@ -118,12 +120,78 @@ void LinkerInvocation::run() {
   link(objectFiles);
 }
 
+
+static std::unique_ptr<llvm::coverage::CoverageMapping>
+loadCoverage(const Configuration &configuration,
+             const std::vector<llvm::StringRef> &targetExecutables,
+             Diagnostics &diagnostics) {
+  if (configuration.coverageInfo.empty()) {
+    return nullptr;
+  }
+
+  llvm::Expected<std::unique_ptr<llvm::coverage::CoverageMapping>> maybeMapping =
+      llvm::coverage::CoverageMapping::load(targetExecutables,
+                                            configuration.coverageInfo);
+  if (!maybeMapping) {
+    std::string error;
+    llvm::raw_string_ostream os(error);
+    llvm::logAllUnhandledErrors(maybeMapping.takeError(), os, "Cannot read coverage info: ");
+    diagnostics.warning(os.str());
+    return nullptr;
+  }
+  return std::move(maybeMapping.get());
+}
+
 std::vector<mull::FunctionUnderTest>
 LinkerInvocation::getFunctionsUnderTest(Program &program) {
   std::vector<FunctionUnderTest> functionsUnderTest;
-  for (auto &bitcode : program.bitcode()) {
-    for (llvm::Function &function : *bitcode->getModule()) {
-      functionsUnderTest.emplace_back(&function, bitcode.get());
+  std::unique_ptr<llvm::coverage::CoverageMapping> coverage = loadCoverage(config, targetExecutables, diagnostics);
+  
+  if (coverage) {
+    std::unordered_map<std::string, std::unordered_set<std::string>> scopedFunctions;
+    std::unordered_set<std::string> unscopedFunctions;
+    for (auto &it : coverage->getCoveredFunctions()) {
+      if (!it.ExecutionCount) {
+        continue;
+      }
+      std::string scope;
+      std::string name = it.Name;
+      size_t idx = name.find(':');
+      if (idx != std::string::npos) {
+        scope = name.substr(0, idx);
+        name = name.substr(idx + 1);
+      }
+      if (scope.empty()) {
+        unscopedFunctions.insert(name);
+      } else {
+        scopedFunctions[scope].insert(name);
+      }
+    }
+    for (auto &bitcode : program.bitcode()) {
+      for (llvm::Function &function : *bitcode->getModule()) {
+        bool covered = false;
+        std::string name = function.getName().str();
+        if (unscopedFunctions.count(name)) {
+          covered = true;
+        } else {
+          std::string filepath = SourceLocation::locationFromFunction(&function).unitFilePath;
+          std::string scope = llvm::sys::path::filename(filepath).str();
+          if (scopedFunctions[scope].count(name)) {
+            covered = true;
+          }
+        }
+        if (covered) {
+          functionsUnderTest.emplace_back(&function, bitcode.get());
+        } else if (config.includeNotCovered) {
+          functionsUnderTest.emplace_back(&function, bitcode.get(), false);
+        }
+      }
+    }
+  } else {
+    for (auto &bitcode : program.bitcode()) {
+      for (llvm::Function &function : *bitcode->getModule()) {
+        functionsUnderTest.emplace_back(&function, bitcode.get());
+      }
     }
   }
   return functionsUnderTest;
@@ -154,8 +222,10 @@ std::vector<mull::FunctionUnderTest> LinkerInvocation::filterFunctions(
 
 std::vector<MutationPoint *>
 LinkerInvocation::findMutationPoints(Program &program) {
-  std::vector<FunctionUnderTest> functionsUnderTest =
-      getFunctionsUnderTest(program);
+  std::vector<FunctionUnderTest> functionsUnderTest;
+  singleTask.execute("Gathering functions under test", [&]() {
+    functionsUnderTest = getFunctionsUnderTest(program);
+  });
   std::vector<FunctionUnderTest> filteredFunctions =
       filterFunctions(functionsUnderTest);
   selectInstructions(filteredFunctions);
