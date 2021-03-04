@@ -9,6 +9,7 @@
 #include <mull/Parallelization/Progress.h>
 #include <mull/Metrics/MetricsMeasure.h>
 #include <mull/Diagnostics/Diagnostics.h>
+#include <thread>
 
 namespace mull {
 std::vector<int> taskBatches(size_t itemsCount, size_t tasks);
@@ -62,7 +63,11 @@ public:
     }
 
     measure.start();
-    executeInParallel();
+    if (tasks.size() == 1 || in.size() == 1) {
+      executeSequentially();
+    } else {
+      executeInParallel();
+    }
     measure.finish();
     printTimeSummary(diagnostics, measure);
   }
@@ -120,20 +125,31 @@ private:
       threads.push_back(std::move(thread));
     }
     
-    progress_reporter reporter{ diagnostics, name, counters, in.size(), workers };
+    std::thread reporter(progress_reporter{ diagnostics, name, counters, in.size(), workers });
 
     for (auto &t : threads) {
       if ((errnum = ::pthread_join(t, nullptr)) != 0) {
         ReportErrnumFatal("pthread_join failed", errnum);
       }
     }
-    reporter();
+    reporter.join();
 
     for (auto &storage : storages) {
       for (auto &m : storage) {
         out.push_back(std::move(m));
       }
     }
+  }
+
+  
+  void executeSequentially() {
+    assert(tasks.size() == 1 || in.size() == 1);
+    auto &task = tasks.front();
+
+    counters.push_back(progress_counter());
+    std::thread reporter(progress_reporter{ diagnostics, name, counters, in.size(), 1 });
+    task(in.begin(), in.end(), out, std::ref(counters.back()));
+    reporter.join();
   }
 
   Diagnostics &diagnostics;
