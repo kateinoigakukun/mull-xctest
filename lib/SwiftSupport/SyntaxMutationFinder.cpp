@@ -1,4 +1,5 @@
 #include "MullXCTest/SwiftSupport/SyntaxMutationFinder.h"
+#include "MullXCTest/PthreadTaskExecutor.h"
 #include <mull/Diagnostics/Diagnostics.h>
 #include <mull/Parallelization/Progress.h>
 #include <mull/Parallelization/TaskExecutor.h>
@@ -38,8 +39,10 @@ SyntaxMutationFinder::findMutations(std::set<SourceFilePath> &sources,
   std::vector<std::pair<SourceFilePath, std::unique_ptr<SourceUnitStorage>>>
       mutationsAsVector;
   std::vector<IndexSwiftSourceTask> tasks(config.parallelization.workers);
-  mull::TaskExecutor indexer(diagnostics, "Syntax Index", sources,
-                             mutationsAsVector, tasks);
+  constexpr size_t DesiredStackSize = 8 << 20;
+  mull_xctest::PthreadTaskExecutor indexer(diagnostics, "Syntax Index", DesiredStackSize,
+                                           sources,
+                                           mutationsAsVector, tasks);
   indexer.execute();
 
   SourceStorage storage;

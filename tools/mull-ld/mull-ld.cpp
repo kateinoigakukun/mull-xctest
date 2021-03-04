@@ -138,6 +138,8 @@ void bootstrapConfiguration(mull::Configuration &configuration,
   }
   if (Workers) {
     configuration.parallelization.workers = Workers;
+  } else {
+    configuration.parallelization = mull::ParallelizationConfig::defaultConfig();
   }
   configuration.debugEnabled = DebugEnabled;
   configuration.linkerTimeout = mull::MullDefaultLinkerTimeoutMilliseconds;
