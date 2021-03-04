@@ -138,3 +138,18 @@ bool XCTestRunFile::duplicateTestTarget(std::string srcTargetName, std::string n
   }
   return false;
 }
+
+
+bool XCTestRunFile::deleteTestTarget(std::string targetName) {
+  escapeColon(targetName);
+  std::string command = "Delete " + targetName;
+  int Ret = llvm::sys::ExecuteAndWait(
+      "/usr/libexec/PlistBuddy",
+      {"/usr/libexec/PlistBuddy", "-x", "-c", command, filePath},
+      /*Env=*/llvm::None, llvm::None,
+      /*SecondsToWait=*/10);
+  if (Ret != 0) {
+    return true;
+  }
+  return false;
+}

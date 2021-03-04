@@ -17,6 +17,7 @@ public:
   llvm::Expected<std::vector<std::string>>
   getDependentProductPaths(std::string targetName);
   bool duplicateTestTarget(std::string srcTargetName, std::string newTargetName);
+  bool deleteTestTarget(std::string targetName);
 };
 
 } // namespace mull_xctest

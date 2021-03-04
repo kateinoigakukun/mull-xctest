@@ -18,6 +18,10 @@ list<std::string> XcodeBuildArgs("Xxcodebuild",
 opt<std::string> TestTarget("test-target", desc("test target name"), Required,
                             value_desc("name"));
 
+opt<std::string> ResultBundleDir("result-bundle-dir", desc("test result bundle directory"),
+                                 Optional,
+                                 value_desc("directory path"));
+
 opt<unsigned> Timeout("timeout", desc("Timeout per test run (milliseconds)"),
                       Optional, value_desc("number"),
                       init(mull::MullDefaultTimeoutMilliseconds));
@@ -42,10 +46,17 @@ int main(int argc, char **argv) {
     configuration.parallelization.workers = Workers;
     configuration.parallelization.mutantExecutionWorkers = Workers;
   }
+
+  llvm::SmallString<128> resultBundleDir(ResultBundleDir);
+  if (resultBundleDir.empty()) {
+    llvm::sys::fs::createUniqueDirectory("mull-xcresult", resultBundleDir);
+  }
   diagnostics.enableDebugMode();
 
   factory.init();
+
   mull_xctest::XCTestRunInvocation invocation(TestRunFile, TestTarget,
+                                              resultBundleDir.str().str(),
                                               XcodeBuildArgs, factory,
                                               diagnostics, configuration);
   mull::IDEReporter reporter(diagnostics);
