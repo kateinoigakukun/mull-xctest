@@ -3,6 +3,7 @@ set(mullXCTest_sources
     Tasks/LoadBitcodeFromBufferTask.cpp
     Tasks/EmbedMutantInfoTask.cpp
     MutantSerialization.cpp
+    XCTestRunFile.cpp
 )
 set(mullXCTest_headers
     ${MULL_XCTEST_INCLUDE_DIR}/Tasks/ExtractEmbeddedFileTask.h
@@ -10,6 +11,7 @@ set(mullXCTest_headers
     ${MULL_XCTEST_INCLUDE_DIR}/Tasks/EmbedMutantInfoTask.h
     ${MULL_XCTEST_INCLUDE_DIR}/MutantSerialization.h
     ${MULL_XCTEST_INCLUDE_DIR}/PthreadTaskExecutor.h
+    ${MULL_XCTEST_INCLUDE_DIR}/XCTestRunFile.h
 )
 
 add_library(mullXCTest STATIC
