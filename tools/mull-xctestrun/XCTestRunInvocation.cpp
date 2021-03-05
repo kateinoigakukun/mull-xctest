@@ -2,6 +2,7 @@
 #include "MullXCTest/MutantMetadata.h"
 #include "MullXCTest/MutantSerialization.h"
 #include "MullXCTest/XCTestRunFile.h"
+#include "MullXCTest/XCResultFile.h"
 #include <llvm/Object/Binary.h>
 #include <llvm/Object/MachO.h>
 #include <llvm/Support/FileSystem.h>
@@ -60,6 +61,7 @@ std::string GenerateXCRunFile(const std::string &srcRunFile,
     std::string newTarget = srcTestTarget + "-" + mutant->getIdentifier();
     runFile.duplicateTestTarget(srcTestTarget, newTarget);
     runFile.addEnvironmentVariable(newTarget, mutant->getIdentifier(), "1");
+    runFile.setBlueprintName(newTarget, mutant->getIdentifier());
   }
   runFile.deleteTestTarget(srcTestTarget);
   return localRunFile;
@@ -107,21 +109,29 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
   Runner runner(diagnostics);
   const std::string localRunFile =
       xctestrunFile + ".mull-xctrn-" + std::to_string(taskID) + ".xctestrun";
-  
+
   GenerateXCRunFile(xctestrunFile, localRunFile, targetName, begin, end);
   std::string resultBundlePath = ResultBundlePath(resultBundleDir, targetName, taskID);
   ExecutionResult result;
-//  if (mutant->isCovered()) {
   result = RunXcodeBuildTest(runner, localRunFile, resultBundlePath,
                              xcodebuildArgs, {}, -1,
                              configuration.captureMutantOutput);
-  for (auto it = begin; it != end; ++it, counter.increment()) {
+  XCResultFile resultFile(resultBundlePath);
+  auto failureTargets = resultFile.getFailureTestTargets();
+  if (!failureTargets) {
+    diagnostics.debug("no failure targets");
   }
-//  } else {
-//    result.status = NotCovered;
-//  }
-  // TODO: Retrieve results from .xcresult
-  // storage.push_back(std::make_unique<MutationResult>(result, mutant.get()));
+  for (auto it = begin; it != end; ++it, counter.increment()) {
+    ExecutionResult targetResult;
+    targetResult.exitStatus = result.status;
+    if (failureTargets &&
+        failureTargets->find(it->get()->getIdentifier()) != failureTargets->end()) {
+      targetResult.status = Failed;
+    } else {
+      targetResult.status = Passed;
+    }
+    storage.push_back(std::make_unique<MutationResult>(targetResult, it->get()));
+  }
 }
 
 } // namespace

@@ -50,12 +50,26 @@ bool XCTestRunFile::addEnvironmentVariable(std::string targetName,
                                            const std::string &key,
                                            const std::string &value) {
   escapeColon(targetName);
-  std::string keyPath = targetName + ".TestingEnvironmentVariables." + key;
   std::string escapedKey = key;
   escapeColon(escapedKey);
   std::string command = "Add " + targetName +
                         ":TestingEnvironmentVariables:" + escapedKey +
                         " string 1";
+  int Ret = llvm::sys::ExecuteAndWait(
+      "/usr/libexec/PlistBuddy",
+      {"/usr/libexec/PlistBuddy", "-x", "-c", command, filePath},
+      /*Env=*/llvm::None, llvm::None,
+      /*SecondsToWait=*/10);
+  if (Ret != 0) {
+    return true;
+  }
+  return false;
+}
+
+bool XCTestRunFile::setBlueprintName(std::string targetName, const std::string &name) {
+  escapeColon(targetName);
+  std::string command = "Set " + targetName +
+                        ":BlueprintName " + name;
   int Ret = llvm::sys::ExecuteAndWait(
       "/usr/libexec/PlistBuddy",
       {"/usr/libexec/PlistBuddy", "-x", "-c", command, filePath},
@@ -75,10 +89,13 @@ XCTestRunFile::getDependentProductPaths(std::string targetName) {
   llvm::FileRemover outRemover(outFile);
   llvm::ArrayRef<llvm::StringRef> args = {
       "/usr/bin/plutil", "-extract", keyPath, "json", filePath, "-o", outFile};
+  std::string ErrMsg;
   int Ret = llvm::sys::ExecuteAndWait("/usr/bin/plutil", args,
                                       /*Env=*/llvm::None, {},
-                                      /*SecondsToWait=*/10);
+                                      /*SecondsToWait=*/0,
+                                      0, &ErrMsg);
   if (Ret != 0) {
+    llvm::dbgs() << "ErrMsg: " << ErrMsg << "\n";
     return llvm::make_error<llvm::StringError>(
         "failed to extract product paths from xctestrun file.",
         llvm::inconvertibleErrorCode());

@@ -14,6 +14,7 @@ public:
   XCTestRunFile(std::string filePath) : filePath(filePath) {}
   bool addEnvironmentVariable(std::string targetName, const std::string &key,
                               const std::string &value);
+  bool setBlueprintName(std::string targetName, const std::string &name);
   llvm::Expected<std::vector<std::string>>
   getDependentProductPaths(std::string targetName);
   bool duplicateTestTarget(std::string srcTargetName, std::string newTargetName);
