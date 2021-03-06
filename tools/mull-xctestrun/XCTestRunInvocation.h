@@ -27,16 +27,15 @@ class XCTestRunInvocation {
 
 public:
   XCTestRunInvocation(const llvm::StringRef testBundle,
-                      const std::string testTarget,
-                      std::string resultBundleDir,
+                      const std::string testTarget, std::string resultBundleDir,
                       const std::vector<std::string> xcodebuildArgs,
                       mull::MutatorsFactory &factory,
                       mull::Diagnostics &diagnostics,
                       const mull::Configuration &config)
       : xctestrunFile(testBundle), testTarget(testTarget),
-        resultBundleDir(resultBundleDir),
-        xcodebuildArgs(xcodebuildArgs), factory(factory),
-        diagnostics(diagnostics), config(config), singleTask(diagnostics) {}
+        resultBundleDir(resultBundleDir), xcodebuildArgs(xcodebuildArgs),
+        factory(factory), diagnostics(diagnostics), config(config),
+        singleTask(diagnostics) {}
   std::unique_ptr<mull::Result> run();
 
 private:

@@ -40,8 +40,8 @@ SyntaxMutationFinder::findMutations(std::set<SourceFilePath> &sources,
       mutationsAsVector;
   std::vector<IndexSwiftSourceTask> tasks(config.parallelization.workers);
   constexpr size_t DesiredStackSize = 8 << 20;
-  mull_xctest::PthreadTaskExecutor indexer(diagnostics, "Syntax Index", DesiredStackSize,
-                                           sources,
+  mull_xctest::PthreadTaskExecutor indexer(diagnostics, "Syntax Index",
+                                           DesiredStackSize, sources,
                                            mutationsAsVector, tasks);
   indexer.execute();
 

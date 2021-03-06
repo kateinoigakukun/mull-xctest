@@ -18,13 +18,12 @@ list<std::string> XcodeBuildArgs("Xxcodebuild",
 opt<std::string> TestTarget("test-target", desc("test target name"), Required,
                             value_desc("name"));
 
-opt<std::string> ResultBundleDir("result-bundle-dir", desc("test result bundle directory"),
-                                 Optional,
+opt<std::string> ResultBundleDir("result-bundle-dir",
+                                 desc("test result bundle directory"), Optional,
                                  value_desc("directory path"));
 
 opt<unsigned> Timeout("timeout", desc("Timeout per test run (milliseconds)"),
-                      Optional, value_desc("number"),
-                      init(60 * 1000));
+                      Optional, value_desc("number"), init(60 * 1000));
 
 opt<unsigned> Workers("workers", desc("How many threads to use"), Optional,
                       value_desc("number"));
@@ -55,10 +54,9 @@ int main(int argc, char **argv) {
 
   factory.init();
 
-  mull_xctest::XCTestRunInvocation invocation(TestRunFile, TestTarget,
-                                              resultBundleDir.str().str(),
-                                              XcodeBuildArgs, factory,
-                                              diagnostics, configuration);
+  mull_xctest::XCTestRunInvocation invocation(
+      TestRunFile, TestTarget, resultBundleDir.str().str(), XcodeBuildArgs,
+      factory, diagnostics, configuration);
   mull::IDEReporter reporter(diagnostics);
   auto results = invocation.run();
   reporter.reportResults(*results);

@@ -1,10 +1,10 @@
 #include "MullXCTest/XCResultFile.h"
-#include <llvm/Support/JSON.h>
-#include <llvm/Support/Program.h>
+#include <llvm/ADT/SmallString.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FileUtilities.h>
+#include <llvm/Support/JSON.h>
 #include <llvm/Support/MemoryBuffer.h>
-#include <llvm/ADT/SmallString.h>
+#include <llvm/Support/Program.h>
 
 using namespace mull_xctest;
 
@@ -18,6 +18,7 @@ protected:
     const auto typeName = typeObj->getString("_name");
     assert(typeName.getValue().equals(this->typeIdentifier()));
   }
+
 public:
   virtual llvm::StringRef typeIdentifier() const = 0;
   Value(const llvm::json::Object &object) : object(object) {}
@@ -27,28 +28,32 @@ class String : public Value {
 public:
   String(const llvm::json::Object &object) : Value(object) { assertType(); }
   virtual llvm::StringRef typeIdentifier() const override { return "String"; }
-  explicit operator llvm::StringRef() const { return object.getString("_value").getValue(); }
+  explicit operator llvm::StringRef() const {
+    return object.getString("_value").getValue();
+  }
 };
 
-template <class T>
-class Array : public Value {
+template <class T> class Array : public Value {
 public:
   Array(const llvm::json::Object &object) : Value(object) { assertType(); }
   virtual llvm::StringRef typeIdentifier() const override { return "Array"; }
 
   const T operator[](size_t I) const {
-    const llvm::json::Object *result = object.getArray("_values")->operator[](I).getAsObject();
+    const llvm::json::Object *result =
+        object.getArray("_values")->operator[](I).getAsObject();
     return T(*result);
   }
-  size_t size() const {
-    return object.getArray("_values")->size();
-  }
+  size_t size() const { return object.getArray("_values")->size(); }
 };
 
 class TestFailureIssueSummary : public Value {
 public:
-  TestFailureIssueSummary(const llvm::json::Object &object) : Value(object) { assertType(); }
-  virtual llvm::StringRef typeIdentifier() const override { return "TestFailureIssueSummary"; }
+  TestFailureIssueSummary(const llvm::json::Object &object) : Value(object) {
+    assertType();
+  }
+  virtual llvm::StringRef typeIdentifier() const override {
+    return "TestFailureIssueSummary";
+  }
 
   llvm::Optional<llvm::StringRef> producingTarget() const {
     auto found = object.getObject("producingTarget");
@@ -61,11 +66,14 @@ public:
 
 class ResultIssueSummaries : public Value {
 public:
-  ResultIssueSummaries(const llvm::json::Object &object) : Value(object) { assertType(); }
-  virtual llvm::StringRef typeIdentifier() const override { return "ResultIssueSummaries"; }
+  ResultIssueSummaries(const llvm::json::Object &object) : Value(object) {
+    assertType();
+  }
+  virtual llvm::StringRef typeIdentifier() const override {
+    return "ResultIssueSummaries";
+  }
 
-  llvm::Optional<Array<TestFailureIssueSummary>>
-  testFailureSummaries() {
+  llvm::Optional<Array<TestFailureIssueSummary>> testFailureSummaries() {
     auto found = object.getObject("testFailureSummaries");
     if (!found) {
       return llvm::None;
@@ -79,12 +87,13 @@ public:
   ActionsInvocationRecord(const llvm::json::Object &object) : Value(object) {
     assertType();
   }
-  virtual llvm::StringRef typeIdentifier() const override { return "ActionsInvocationRecord"; }
+  virtual llvm::StringRef typeIdentifier() const override {
+    return "ActionsInvocationRecord";
+  }
   ResultIssueSummaries issues() const {
     return ResultIssueSummaries(*object.getObject("issues"));
   }
 };
-
 
 static llvm::Optional<std::string>
 execCommand(llvm::StringRef exec, llvm::ArrayRef<llvm::StringRef> Argv) {
@@ -112,23 +121,22 @@ execCommand(llvm::StringRef exec, llvm::ArrayRef<llvm::StringRef> Argv) {
   }
   return Path.str();
 }
-}
+} // namespace
 
 void dumpString(llvm::Optional<std::string> content) {
   llvm::dbgs() << content << "\n";
 }
 
-llvm::Expected<std::set<std::string>>
-XCResultFile::getFailureTestTargets() {
-  auto jsonOutput = execCommand("/usr/bin/xcrun", {
-    "/usr/bin/xcrun", "xcresulttool", "get",
-    "--path", resultFile,
-    "--format", "json"
-  });
+llvm::Expected<std::set<std::string>> XCResultFile::getFailureTestTargets() {
+  auto jsonOutput =
+      execCommand("/usr/bin/xcrun", {"/usr/bin/xcrun", "xcresulttool", "get",
+                                     "--path", resultFile, "--format", "json"});
   if (!jsonOutput) {
-    return llvm::make_error<llvm::StringError>("failed to execute xcresulttool", llvm::inconvertibleErrorCode());
+    return llvm::make_error<llvm::StringError>("failed to execute xcresulttool",
+                                               llvm::inconvertibleErrorCode());
   }
-  llvm::Expected<llvm::json::Value> json = llvm::json::parse(jsonOutput.getValue());
+  llvm::Expected<llvm::json::Value> json =
+      llvm::json::parse(jsonOutput.getValue());
   if (!json) {
     return json.takeError();
   }
@@ -137,7 +145,7 @@ XCResultFile::getFailureTestTargets() {
   ActionsInvocationRecord record(*json->getAsObject());
   const auto summaries = record.issues().testFailureSummaries();
   if (!summaries) {
-    return std::set<std::string> {};
+    return std::set<std::string>{};
   }
   for (size_t it = 0, end = summaries->size(); it != end; it++) {
     TestFailureIssueSummary summary = summaries->operator[](it);

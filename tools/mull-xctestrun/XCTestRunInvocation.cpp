@@ -1,8 +1,8 @@
 #include "XCTestRunInvocation.h"
 #include "MullXCTest/MutantMetadata.h"
 #include "MullXCTest/MutantSerialization.h"
-#include "MullXCTest/XCTestRunFile.h"
 #include "MullXCTest/XCResultFile.h"
+#include "MullXCTest/XCTestRunFile.h"
 #include <llvm/Object/Binary.h>
 #include <llvm/Object/MachO.h>
 #include <llvm/Support/FileSystem.h>
@@ -28,12 +28,12 @@ std::string GetBundleBinaryPath(std::string &bundlePath) {
   return binaryPath.str().str();
 }
 
-ExecutionResult RunXcodeBuildTest(Runner &runner,
-                                  const std::string &xctestrunFile,
-                                  const llvm::Optional<std::string> &resultBundlePath,
-                                  const std::vector<std::string> &extraArgs,
-                                  const std::vector<std::string> &environment,
-                                  long long int timeout, bool captureOutput) {
+ExecutionResult
+RunXcodeBuildTest(Runner &runner, const std::string &xctestrunFile,
+                  const llvm::Optional<std::string> &resultBundlePath,
+                  const std::vector<std::string> &extraArgs,
+                  const std::vector<std::string> &environment,
+                  long long int timeout, bool captureOutput) {
   std::vector<std::string> arguments;
   arguments.push_back("test-without-building");
   std::copy(extraArgs.begin(), extraArgs.end(), std::back_inserter(arguments));
@@ -49,8 +49,8 @@ ExecutionResult RunXcodeBuildTest(Runner &runner,
     arguments.push_back("-maximum-test-execution-time-allowance");
     arguments.push_back(std::to_string(timeout / 1000));
   }
-  return runner.runProgram("/usr/bin/xcodebuild", arguments, environment,
-                           -1, captureOutput);
+  return runner.runProgram("/usr/bin/xcodebuild", arguments, environment, -1,
+                           captureOutput);
 }
 
 void GenerateSingleTargetXCRunFile(const std::string &srcRunFile,
@@ -102,8 +102,8 @@ public:
                       ExecutionResult &baseline)
       : taskID(taskID), configuration(configuration), diagnostics(diagnostics),
         xctestrunFile(xctestrunFile), resultBundleDir(resultBundleDir),
-        targetName(targetName),
-        xcodebuildArgs(xcodebuildArgs), baseline(baseline) {}
+        targetName(targetName), xcodebuildArgs(xcodebuildArgs),
+        baseline(baseline) {}
 
   void operator()(iterator begin, iterator end, Out &storage,
                   progress_counter &counter);
@@ -119,9 +119,12 @@ private:
   ExecutionResult &baseline;
 };
 
-static std::string ResultBundlePath(std::string resultBundleDir, std::string targetName, int taskID) {
+static std::string ResultBundlePath(std::string resultBundleDir,
+                                    std::string targetName, int taskID) {
   llvm::SmallString<128> resultBundlePath(resultBundleDir);
-  llvm::sys::path::append(resultBundlePath, targetName + "-" + std::to_string(taskID) + ".xcresult");
+  llvm::sys::path::append(resultBundlePath, targetName + "-" +
+                                                std::to_string(taskID) +
+                                                ".xcresult");
   return resultBundlePath.str().str();
 }
 
@@ -132,7 +135,8 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
       xctestrunFile + ".mull-xctrn-" + std::to_string(taskID) + ".xctestrun";
 
   GenerateXCRunFile(xctestrunFile, localRunFile, targetName, begin, end);
-  std::string resultBundlePath = ResultBundlePath(resultBundleDir, targetName, taskID);
+  std::string resultBundlePath =
+      ResultBundlePath(resultBundleDir, targetName, taskID);
   ExecutionResult result;
   result = RunXcodeBuildTest(runner, localRunFile, resultBundlePath,
                              xcodebuildArgs, {}, baseline.runningTime * 10,
@@ -145,13 +149,14 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
   for (auto it = begin; it != end; ++it, counter.increment()) {
     ExecutionResult targetResult;
     targetResult.exitStatus = result.status;
-    if (failureTargets &&
-        failureTargets->find(it->get()->getIdentifier()) != failureTargets->end()) {
+    if (failureTargets && failureTargets->find(it->get()->getIdentifier()) !=
+                              failureTargets->end()) {
       targetResult.status = Failed;
     } else {
       targetResult.status = Passed;
     }
-    storage.push_back(std::make_unique<MutationResult>(targetResult, it->get()));
+    storage.push_back(
+        std::make_unique<MutationResult>(targetResult, it->get()));
   }
 }
 
@@ -161,22 +166,24 @@ std::unique_ptr<Result> XCTestRunInvocation::run() {
   auto mutants = extractMutantInfo();
   Runner runner(diagnostics);
 
-  std::string singleTargetRunFile = xctestrunFile.str() + ".mull-xctrn-base.xctestrun";
-  GenerateSingleTargetXCRunFile(xctestrunFile.str(), singleTargetRunFile, testTarget);
+  std::string singleTargetRunFile =
+      xctestrunFile.str() + ".mull-xctrn-base.xctestrun";
+  GenerateSingleTargetXCRunFile(xctestrunFile.str(), singleTargetRunFile,
+                                testTarget);
 
   ExecutionResult baseline;
   singleTask.execute("Baseline run", [&]() {
-    baseline =
-        RunXcodeBuildTest(runner, singleTargetRunFile, llvm::None, xcodebuildArgs, {},
-                          config.timeout, config.captureMutantOutput);
+    baseline = RunXcodeBuildTest(runner, singleTargetRunFile, llvm::None,
+                                 xcodebuildArgs, {}, config.timeout,
+                                 config.captureMutantOutput);
   });
 
   std::vector<std::unique_ptr<MutationResult>> mutationResults;
   std::vector<MutantExecutionTask> tasks;
   tasks.reserve(config.parallelization.mutantExecutionWorkers);
   for (int i = 0; i < config.parallelization.mutantExecutionWorkers; i++) {
-    tasks.emplace_back(i, config, diagnostics, singleTargetRunFile, resultBundleDir, testTarget,
-                       xcodebuildArgs, baseline);
+    tasks.emplace_back(i, config, diagnostics, singleTargetRunFile,
+                       resultBundleDir, testTarget, xcodebuildArgs, baseline);
   }
   TaskExecutor<MutantExecutionTask> mutantRunner(diagnostics, "Running mutants",
                                                  mutants, mutationResults,

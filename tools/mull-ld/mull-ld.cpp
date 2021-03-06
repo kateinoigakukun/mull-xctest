@@ -60,13 +60,9 @@ list<std::string>
                  desc("File/directory paths to whitelist (supports regex)"),
                  ZeroOrMore, value_desc("regex"), cat(MullLDCategory));
 
-
 opt<std::string> CoverageInfo(
-    "coverage-info",
-    desc("Path to the coverage info file (LLVM's profdata)"),
-    value_desc("string"),
-    Optional,
-    init(std::string()), cat(MullLDCategory));
+    "coverage-info", desc("Path to the coverage info file (LLVM's profdata)"),
+    value_desc("string"), Optional, init(std::string()), cat(MullLDCategory));
 
 list<std::string>
     TargetExecutables("target-executable",
@@ -110,8 +106,7 @@ static void validateInputFiles(const std::vector<std::string> &inputFiles) {
 static void validateConfiguration(const mull::Configuration &configuration,
                                   mull::Diagnostics &diags) {
   if (configuration.linker.empty()) {
-    diags.error(
-        "No linker specified. Please set --linker option.");
+    diags.error("No linker specified. Please set --linker option.");
   }
 }
 
@@ -166,7 +161,8 @@ void bootstrapConfiguration(mull::Configuration &configuration,
   if (Workers) {
     configuration.parallelization.workers = Workers;
   } else {
-    configuration.parallelization = mull::ParallelizationConfig::defaultConfig();
+    configuration.parallelization =
+        mull::ParallelizationConfig::defaultConfig();
   }
   configuration.debugEnabled = DebugEnabled;
   configuration.coverageInfo = CoverageInfo;
@@ -193,10 +189,9 @@ void bootstrapInvocationConfiguration(
 int main(int argc, char **argv) {
   mull::Diagnostics diagnostics;
   llvm::ArrayRef<const char *> args(argv + 1, argv + argc);
-  std::vector<const char *> mullArgs { *argv };
+  std::vector<const char *> mullArgs{*argv};
   std::vector<const char *> linkerArgs;
   filterMullOptions(args, mullArgs, linkerArgs);
-
 
   std::vector<std::unique_ptr<llvm::MemoryBuffer>> bitcodeBuffers;
 
@@ -246,10 +241,11 @@ int main(int argc, char **argv) {
   mull::MutationsFinder mutationsFinder(factory.mutators(groups),
                                         configuration);
 
-  std::vector<llvm::StringRef> targetExecutables(TargetExecutables.begin(), TargetExecutables.end());
+  std::vector<llvm::StringRef> targetExecutables(TargetExecutables.begin(),
+                                                 TargetExecutables.end());
   mull_xctest::LinkerInvocation invocation(
-      inputObjects, targetExecutables, filters, mutationsFinder, options, diagnostics,
-      configuration, invocationConfig);
+      inputObjects, targetExecutables, filters, mutationsFinder, options,
+      diagnostics, configuration, invocationConfig);
   invocation.run();
   llvm::llvm_shutdown();
   return 0;

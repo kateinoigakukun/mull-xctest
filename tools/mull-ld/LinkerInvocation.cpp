@@ -5,10 +5,10 @@
 #include "MullXCTest/Tasks/ExtractEmbeddedFileTask.h"
 #include "MullXCTest/Tasks/LoadBitcodeFromBufferTask.h"
 #include <llvm/Option/ArgList.h>
+#include <llvm/ProfileData/Coverage/CoverageMapping.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FileUtilities.h>
 #include <llvm/Support/Path.h>
-#include <llvm/ProfileData/Coverage/CoverageMapping.h>
 #include <mull/Filters/FunctionFilter.h>
 #include <mull/Filters/MutationFilter.h>
 #include <mull/Mutant.h>
@@ -120,7 +120,6 @@ void LinkerInvocation::run() {
   link(objectFiles);
 }
 
-
 static std::unique_ptr<llvm::coverage::CoverageMapping>
 loadCoverage(const Configuration &configuration,
              const std::vector<llvm::StringRef> &targetExecutables,
@@ -129,13 +128,14 @@ loadCoverage(const Configuration &configuration,
     return nullptr;
   }
 
-  llvm::Expected<std::unique_ptr<llvm::coverage::CoverageMapping>> maybeMapping =
-      llvm::coverage::CoverageMapping::load(targetExecutables,
-                                            configuration.coverageInfo);
+  llvm::Expected<std::unique_ptr<llvm::coverage::CoverageMapping>>
+      maybeMapping = llvm::coverage::CoverageMapping::load(
+          targetExecutables, configuration.coverageInfo);
   if (!maybeMapping) {
     std::string error;
     llvm::raw_string_ostream os(error);
-    llvm::logAllUnhandledErrors(maybeMapping.takeError(), os, "Cannot read coverage info: ");
+    llvm::logAllUnhandledErrors(maybeMapping.takeError(), os,
+                                "Cannot read coverage info: ");
     diagnostics.warning(os.str());
     return nullptr;
   }
@@ -145,10 +145,12 @@ loadCoverage(const Configuration &configuration,
 std::vector<mull::FunctionUnderTest>
 LinkerInvocation::getFunctionsUnderTest(Program &program) {
   std::vector<FunctionUnderTest> functionsUnderTest;
-  std::unique_ptr<llvm::coverage::CoverageMapping> coverage = loadCoverage(config, targetExecutables, diagnostics);
-  
+  std::unique_ptr<llvm::coverage::CoverageMapping> coverage =
+      loadCoverage(config, targetExecutables, diagnostics);
+
   if (coverage) {
-    std::unordered_map<std::string, std::unordered_set<std::string>> scopedFunctions;
+    std::unordered_map<std::string, std::unordered_set<std::string>>
+        scopedFunctions;
     std::unordered_set<std::string> unscopedFunctions;
     for (auto &it : coverage->getCoveredFunctions()) {
       if (!it.ExecutionCount) {
@@ -174,7 +176,8 @@ LinkerInvocation::getFunctionsUnderTest(Program &program) {
         if (unscopedFunctions.count(name)) {
           covered = true;
         } else {
-          std::string filepath = SourceLocation::locationFromFunction(&function).unitFilePath;
+          std::string filepath =
+              SourceLocation::locationFromFunction(&function).unitFilePath;
           std::string scope = llvm::sys::path::filename(filepath).str();
           if (scopedFunctions[scope].count(name)) {
             covered = true;

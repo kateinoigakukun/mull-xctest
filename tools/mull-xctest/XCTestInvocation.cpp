@@ -94,8 +94,7 @@ MutantList XCTestInvocation::extractMutantInfo() {
   SmallString<64> binaryPath(testBundle);
   llvm::sys::path::append(binaryPath, "Contents", "MacOS", basename);
 
-  auto result =
-      ExtractMutantInfo(binaryPath.str().str(), factory, allPoints);
+  auto result = ExtractMutantInfo(binaryPath.str().str(), factory, allPoints);
   if (!result) {
     llvm::consumeError(result.takeError());
     return {};

@@ -41,10 +41,9 @@ public:
                    const mull::Configuration &config,
                    const InvocationConfig &invocationConfig)
       : inputObjects(inputObjects), targetExecutables(targetExecutables),
-        filters(filters),
-        mutationsFinder(mutationsFinder), linkerOpts(originalArgs),
-        diagnostics(diagnostics), config(config), singleTask(diagnostics),
-        invocationConfig(invocationConfig) {}
+        filters(filters), mutationsFinder(mutationsFinder),
+        linkerOpts(originalArgs), diagnostics(diagnostics), config(config),
+        singleTask(diagnostics), invocationConfig(invocationConfig) {}
   void run();
 
 private:

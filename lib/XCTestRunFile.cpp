@@ -66,10 +66,10 @@ bool XCTestRunFile::addEnvironmentVariable(std::string targetName,
   return false;
 }
 
-bool XCTestRunFile::setBlueprintName(std::string targetName, const std::string &name) {
+bool XCTestRunFile::setBlueprintName(std::string targetName,
+                                     const std::string &name) {
   escapeColon(targetName);
-  std::string command = "Set " + targetName +
-                        ":BlueprintName " + name;
+  std::string command = "Set " + targetName + ":BlueprintName " + name;
   int Ret = llvm::sys::ExecuteAndWait(
       "/usr/libexec/PlistBuddy",
       {"/usr/libexec/PlistBuddy", "-x", "-c", command, filePath},
@@ -92,8 +92,7 @@ XCTestRunFile::getDependentProductPaths(std::string targetName) {
   std::string ErrMsg;
   int Ret = llvm::sys::ExecuteAndWait("/usr/bin/plutil", args,
                                       /*Env=*/llvm::None, {},
-                                      /*SecondsToWait=*/0,
-                                      0, &ErrMsg);
+                                      /*SecondsToWait=*/0, 0, &ErrMsg);
   if (Ret != 0) {
     llvm::dbgs() << "ErrMsg: " << ErrMsg << "\n";
     return llvm::make_error<llvm::StringError>(
@@ -141,8 +140,7 @@ XCTestRunFile::getDependentProductPaths(std::string targetName) {
   return std::move(results);
 }
 
-llvm::Expected<std::vector<std::string>>
-XCTestRunFile::getTargets() {
+llvm::Expected<std::vector<std::string>> XCTestRunFile::getTargets() {
   llvm::SmallString<64> outFile;
   llvm::sys::fs::createTemporaryFile("mull-xctestrun-tgt", "", outFile);
   llvm::FileRemover outRemover(outFile);
@@ -151,8 +149,7 @@ XCTestRunFile::getTargets() {
   std::string ErrMsg;
   int Ret = llvm::sys::ExecuteAndWait("/usr/bin/plutil", args,
                                       /*Env=*/llvm::None, {},
-                                      /*SecondsToWait=*/0,
-                                      0, &ErrMsg);
+                                      /*SecondsToWait=*/0, 0, &ErrMsg);
   if (Ret != 0) {
     llvm::dbgs() << "ErrMsg: " << ErrMsg << "\n";
     return llvm::make_error<llvm::StringError>(
@@ -186,7 +183,8 @@ XCTestRunFile::getTargets() {
   return std::move(results);
 }
 
-bool XCTestRunFile::duplicateTestTarget(std::string srcTargetName, std::string newTargetName) {
+bool XCTestRunFile::duplicateTestTarget(std::string srcTargetName,
+                                        std::string newTargetName) {
   escapeColon(srcTargetName);
   escapeColon(newTargetName);
   std::string command = "Copy " + srcTargetName + " " + newTargetName;
@@ -200,7 +198,6 @@ bool XCTestRunFile::duplicateTestTarget(std::string srcTargetName, std::string n
   }
   return false;
 }
-
 
 bool XCTestRunFile::deleteTestTarget(std::string targetName) {
   escapeColon(targetName);
