@@ -1,5 +1,5 @@
 // RUN: %empty-directory(%t)
-// RUN: MULL_XCTEST_ARGS="-enable-syntax=true" swiftc %s -tools-directory %mull-xctest-bin -embed-bitcode -g -o %t/comp.swift.out -sdk %target-sdk
+// RUN: swiftc %s -tools-directory %mull-xctest-bin -embed-bitcode -g -o %t/comp.swift.out -sdk %target-sdk
 // RUN: mull-dump-mutants %t/comp.swift.out | FileCheck %s
 
 func equal(_ lhs: Int, _ rhs: Int) -> Bool {

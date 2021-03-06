@@ -111,8 +111,7 @@ static void validateConfiguration(const mull::Configuration &configuration,
                                   mull::Diagnostics &diags) {
   if (configuration.linker.empty()) {
     diags.error(
-        "No linker specified. Please set --linker option in MULL_XCTEST_ARGS"
-        "environment variable.");
+        "No linker specified. Please set --linker option.");
   }
 }
 
@@ -195,7 +194,7 @@ int main(int argc, char **argv) {
   mull::Diagnostics diagnostics;
   llvm::ArrayRef<const char *> args(argv + 1, argv + argc);
   std::vector<const char *> mullArgs { *argv };
-  std::vector<const char *> linkerArgs { *argv };
+  std::vector<const char *> linkerArgs;
   filterMullOptions(args, mullArgs, linkerArgs);
 
 
