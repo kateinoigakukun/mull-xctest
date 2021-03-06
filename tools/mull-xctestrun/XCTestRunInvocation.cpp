@@ -114,7 +114,7 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
   std::string resultBundlePath = ResultBundlePath(resultBundleDir, targetName, taskID);
   ExecutionResult result;
   result = RunXcodeBuildTest(runner, localRunFile, resultBundlePath,
-                             xcodebuildArgs, {}, -1,
+                             xcodebuildArgs, {}, baseline.runningTime * 10,
                              configuration.captureMutantOutput);
   XCResultFile resultFile(resultBundlePath);
   auto failureTargets = resultFile.getFailureTestTargets();

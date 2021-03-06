@@ -69,10 +69,10 @@ void LD64OptTable::collectObjectLinkOpts(const llvm::opt::InputArgList &args,
     if (arg->getOption().matches(ld64::OPT_add_ast_path)) {
       // workaround: add_ast_path is not supported in lld
       // but it takes a value, so render it.
-      arg->renderAsInput(args, output);
+      arg->render(args, output);
       ++it;
       arg = *it;
-      arg->renderAsInput(args, output);
+      arg->render(args, output);
     } else if (arg->getOption().matches(ld64::OPT_bitcode_bundle)) {
       // -bitcode_bundle and -bundle can't be appeared at once
       continue;

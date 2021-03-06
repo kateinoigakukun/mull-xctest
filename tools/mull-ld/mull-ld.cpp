@@ -73,6 +73,21 @@ list<std::string>
                       desc("Executable file path to collect coverage info"),
                       ZeroOrMore, value_desc("path"), cat(MullLDCategory));
 
+void filterMullOptions(const llvm::ArrayRef<const char *> &args,
+                       std::vector<const char *> &mullArgs,
+                       std::vector<const char *> &linkerArgs) {
+  size_t index = 0;
+  while (index < args.size()) {
+    if (strcmp(args[index], "-Xmull") == 0) {
+      mullArgs.push_back(args[index + 1]);
+      index++;
+    } else {
+      linkerArgs.push_back(args[index]);
+    }
+    index++;
+  }
+}
+
 void extractBitcodeFiles(std::vector<std::string> &args,
                          std::vector<llvm::StringRef> &bitcodeFiles) {
   for (const auto &rawArg : args) {
@@ -178,10 +193,16 @@ void bootstrapInvocationConfiguration(
 
 int main(int argc, char **argv) {
   mull::Diagnostics diagnostics;
+  llvm::ArrayRef<const char *> args(argv + 1, argv + argc);
+  std::vector<const char *> mullArgs { *argv };
+  std::vector<const char *> linkerArgs { *argv };
+  filterMullOptions(args, mullArgs, linkerArgs);
+
+
   std::vector<std::unique_ptr<llvm::MemoryBuffer>> bitcodeBuffers;
 
   bool validOptions = llvm::cl::ParseCommandLineOptions(
-      1, argv, "", &llvm::errs(), "MULL_XCTEST_ARGS");
+      mullArgs.size(), mullArgs.data(), "", &llvm::errs());
   if (!validOptions) {
     return 1;
   }
@@ -192,10 +213,10 @@ int main(int argc, char **argv) {
 
   mull_xctest::LinkerOptTable *optTable =
       mull_xctest::GetLinkerOptTable(LinkerFlavor);
-  llvm::ArrayRef<const char *> args(argv + 1, argv + argc);
+
   unsigned missingIndex;
   unsigned missingCount;
-  auto parsedArgs = optTable->ParseArgs(args, missingIndex, missingCount);
+  auto parsedArgs = optTable->ParseArgs(linkerArgs, missingIndex, missingCount);
   mull_xctest::LinkerOptions options(*optTable, parsedArgs);
 
   std::vector<std::string> inputObjects;
