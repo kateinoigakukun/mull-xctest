@@ -110,7 +110,10 @@ llvm::Expected<MutantList> mull_xctest::ExtractMutantInfo(
   Expected<object::SectionRef> section =
       machOObjectFile->getSection(MULL_MUTANTS_INFO_SECTION_NAME_STR);
   if (!section) {
-    return section.takeError();
+    return llvm::make_error<StringError>(
+        Twine("failed to get mutants info section: ") +
+            llvm::toString(section.takeError()),
+        llvm::inconvertibleErrorCode());
   }
 
   Expected<StringRef> contentsData = section->getContents();

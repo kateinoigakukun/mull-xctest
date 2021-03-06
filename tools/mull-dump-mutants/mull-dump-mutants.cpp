@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
   factory.init();
   auto result = ExtractMutantInfo(InputFile, factory, pointsOwner);
   if (!result) {
-    llvm::report_fatal_error(result.takeError());
+    diagnostics.error(llvm::toString(result.takeError()));
   }
 
   if (result->empty()) {
