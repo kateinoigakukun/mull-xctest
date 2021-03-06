@@ -11,6 +11,9 @@ function(install_symlink name target outdir)
   message(STATUS "Creating ${name} to ${bindir}")
 
   execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E make_directory "${bindir}")
+
+  execute_process(
     COMMAND "${CMAKE_COMMAND}" -E ${LINK_OR_COPY} "${target}" "${name}"
     WORKING_DIRECTORY "${bindir}")
 
