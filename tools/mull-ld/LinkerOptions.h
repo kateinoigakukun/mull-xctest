@@ -20,6 +20,7 @@ public:
                                      llvm::opt::ArgStringList &output) = 0;
   virtual void appendFilelist(const std::string filelist,
                               std::vector<std::string> &output) = 0;
+  virtual bool hasHelpFlag(const llvm::opt::InputArgList &) = 0;
 };
 
 LinkerOptTable *GetLinkerOptTable(std::string flavor);
@@ -43,6 +44,9 @@ public:
                       std::vector<std::string> &output) {
     optTable.appendFilelist(filelist, output);
   }
+  bool hasHelpFlag() {
+    return optTable.hasHelpFlag(args);
+  }
 };
 
 class LD64OptTable : public LinkerOptTable {
@@ -55,6 +59,7 @@ public:
                                      llvm::opt::ArgStringList &output) override;
   virtual void appendFilelist(const std::string filelist,
                               std::vector<std::string> &output) override;
+  virtual bool hasHelpFlag(const llvm::opt::InputArgList &) override;
 };
 
 namespace ld64 {
@@ -77,6 +82,7 @@ public:
                                      llvm::opt::ArgStringList &output) override;
   virtual void appendFilelist(const std::string filelist,
                               std::vector<std::string> &output) override;
+  virtual bool hasHelpFlag(const llvm::opt::InputArgList &) override;
 };
 
 namespace clang {

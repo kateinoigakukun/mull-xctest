@@ -28,6 +28,11 @@ opt<unsigned> Timeout("timeout", desc("Timeout per test run (milliseconds)"),
 opt<unsigned> Workers("workers", desc("How many threads to use"), Optional,
                       value_desc("number"));
 
+opt<bool> DebugEnabled("debug",
+                       desc("Enables Debug Mode: more logs are printed"),
+                       Optional, init(false));
+
+
 int main(int argc, char **argv) {
   bool validOptions =
       llvm::cl::ParseCommandLineOptions(argc, argv, "", &llvm::errs());
@@ -38,7 +43,7 @@ int main(int argc, char **argv) {
   mull::Diagnostics diagnostics;
   mull::MutatorsFactory factory(diagnostics);
   mull::Configuration configuration;
-  configuration.debugEnabled = true;
+  configuration.debugEnabled = DebugEnabled;
   configuration.timeout = Timeout;
   configuration.parallelization = mull::ParallelizationConfig::defaultConfig();
   if (Workers) {
@@ -50,7 +55,9 @@ int main(int argc, char **argv) {
   if (resultBundleDir.empty()) {
     llvm::sys::fs::createUniqueDirectory("mull-xcresult", resultBundleDir);
   }
-  diagnostics.enableDebugMode();
+  if (configuration.debugEnabled) {
+    diagnostics.enableDebugMode();
+  }
 
   factory.init();
 

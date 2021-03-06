@@ -179,21 +179,40 @@ void bootstrapInvocationConfiguration(
     configuration.DumpLLVM = DumpLLVM;
   }
   configuration.EnableSyntaxFilter = EnableSyntaxFilter;
-  if (EnableSyntaxFilter.hasArgStr()) {
+  if (EnableSyntaxFilter) {
     std::string status =
         configuration.EnableSyntaxFilter ? "enabled" : "disabled";
     diagnostics.debug("syntax filter is " + status);
   }
 }
 
+void PrintHelpMessage(char *commandName) {
+  llvm::outs() << "USAGE: " << commandName << " [linker options] -Xmull [option] -Xmull [option] ...\n\n";
+  llvm::outs() << "OPTIONS:\n\n";
+
+  llvm::StringMap<Option *> opts;
+  size_t maxArgLen = 0;
+
+  for (auto &option : TopLevelSubCommand->OptionsMap) {
+    if (option.getValue()->getOptionHiddenFlag() == ReallyHidden ||
+        option.getValue()->getOptionHiddenFlag() == Hidden)
+      continue;
+    opts.insert(std::make_pair(option.first(), option.second));
+    maxArgLen = std::max(maxArgLen, option.second->getOptionWidth());
+  }
+
+  for (auto &option : opts) {
+    option.getValue()->printOptionInfo(maxArgLen);
+  }
+}
+
 int main(int argc, char **argv) {
-  mull::Diagnostics diagnostics;
+  llvm::cl::HideUnrelatedOptions(MullLDCategory);
+
   llvm::ArrayRef<const char *> args(argv + 1, argv + argc);
   std::vector<const char *> mullArgs{*argv};
   std::vector<const char *> linkerArgs;
   filterMullOptions(args, mullArgs, linkerArgs);
-
-  std::vector<std::unique_ptr<llvm::MemoryBuffer>> bitcodeBuffers;
 
   bool validOptions = llvm::cl::ParseCommandLineOptions(
       mullArgs.size(), mullArgs.data(), "", &llvm::errs());
@@ -201,6 +220,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  mull::Diagnostics diagnostics;
   if (DebugEnabled) {
     diagnostics.enableDebugMode();
   }
@@ -212,6 +232,11 @@ int main(int argc, char **argv) {
   unsigned missingCount;
   auto parsedArgs = optTable->ParseArgs(linkerArgs, missingIndex, missingCount);
   mull_xctest::LinkerOptions options(*optTable, parsedArgs);
+
+  if (options.hasHelpFlag()) {
+    PrintHelpMessage(*argv);
+    return 0;
+  }
 
   std::vector<std::string> inputObjects;
   options.collectObjectFiles(inputObjects);

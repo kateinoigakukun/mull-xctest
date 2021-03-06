@@ -89,6 +89,11 @@ void LD64OptTable::appendFilelist(const std::string filelist,
   output.push_back(filelist);
 }
 
+
+bool LD64OptTable::hasHelpFlag(const llvm::opt::InputArgList &args) {
+  return args.hasArg(ld64::OPT_help);
+}
+
 namespace clang {
 
 #define PREFIX(NAME, VALUE) const char *NAME[] = VALUE;
@@ -141,6 +146,10 @@ void ClangOptTable::appendFilelist(const std::string filelist,
                                    std::vector<std::string> &output) {
   output.push_back("-filelist");
   output.push_back(filelist);
+}
+
+bool ClangOptTable::hasHelpFlag(const llvm::opt::InputArgList &args) {
+  return args.hasArg(clang::OPT_help);
 }
 
 LinkerOptTable *GetLinkerOptTable(std::string flavor) {
