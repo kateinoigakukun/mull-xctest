@@ -158,7 +158,7 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
 } // namespace
 
 std::unique_ptr<Result> XCTestRunInvocation::run() {
-  auto mutants = extractMutantInfo(mutatorsOwner, allPoints);
+  auto mutants = extractMutantInfo();
   Runner runner(diagnostics);
 
   std::string singleTargetRunFile = xctestrunFile.str() + ".mull-xctrn-base.xctestrun";
@@ -190,10 +190,7 @@ std::unique_ptr<Result> XCTestRunInvocation::run() {
 }
 
 std::vector<std::unique_ptr<mull::Mutant>>
-XCTestRunInvocation::extractMutantInfo(
-    std::vector<std::unique_ptr<mull::Mutator>> &mutators,
-    std::vector<std::unique_ptr<mull::MutationPoint>> &pointsOwner) {
-
+XCTestRunInvocation::extractMutantInfo() {
   XCTestRunFile file(xctestrunFile.str());
   auto products = file.getDependentProductPaths(testTarget);
   if (!products) {
@@ -204,7 +201,7 @@ XCTestRunInvocation::extractMutantInfo(
   std::vector<std::unique_ptr<mull::Mutant>> output;
   for (auto product : *products) {
     auto binaryPath = GetBundleBinaryPath(product);
-    auto result = ExtractMutantInfo(binaryPath, factory, mutators, pointsOwner);
+    auto result = ExtractMutantInfo(binaryPath, factory, allPoints);
     if (!result) {
       continue;
     }

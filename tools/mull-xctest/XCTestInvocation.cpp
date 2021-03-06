@@ -56,7 +56,7 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
 std::unique_ptr<Result> XCTestInvocation::run() {
   auto xcrun = "/usr/bin/xcrun";
   auto xctest = "xctest";
-  auto mutants = extractMutantInfo(mutatorsOwner, allPoints);
+  auto mutants = extractMutantInfo();
   Runner runner(diagnostics);
 
   singleTask.execute("Warm up run", [&]() {
@@ -87,9 +87,7 @@ std::unique_ptr<Result> XCTestInvocation::run() {
       std::move(mutants), std::move(mutationResults), filteredMutations);
 }
 
-MutantList XCTestInvocation::extractMutantInfo(
-    std::vector<std::unique_ptr<mull::Mutator>> &mutators,
-    std::vector<std::unique_ptr<mull::MutationPoint>> &pointsOwner) {
+MutantList XCTestInvocation::extractMutantInfo() {
 
   auto filename = llvm::sys::path::filename(testBundle);
   auto basename = filename.rsplit(".").first;
@@ -97,7 +95,7 @@ MutantList XCTestInvocation::extractMutantInfo(
   llvm::sys::path::append(binaryPath, "Contents", "MacOS", basename);
 
   auto result =
-      ExtractMutantInfo(binaryPath.str().str(), factory, mutators, pointsOwner);
+      ExtractMutantInfo(binaryPath.str().str(), factory, allPoints);
   if (!result) {
     llvm::consumeError(result.takeError());
     return {};

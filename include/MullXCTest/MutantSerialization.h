@@ -13,7 +13,6 @@ using MutantList = std::vector<std::unique_ptr<mull::Mutant>>;
 
 llvm::Expected<MutantList> ExtractMutantInfo(
     std::string binaryPath, mull::MutatorsFactory &factory,
-    std::vector<std::unique_ptr<mull::Mutator>> &mutators,
     std::vector<std::unique_ptr<mull::MutationPoint>> &pointsOwner);
 
 class MutantSerializer {

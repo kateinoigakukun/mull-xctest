@@ -93,7 +93,6 @@ std::unique_ptr<mull::MutationPoint> MutantDeserializer::deserialize() {
 
 llvm::Expected<MutantList> mull_xctest::ExtractMutantInfo(
     std::string binaryPath, mull::MutatorsFactory &factory,
-    std::vector<std::unique_ptr<mull::Mutator>> &mutators,
     std::vector<std::unique_ptr<mull::MutationPoint>> &pointsOwner) {
 
   using namespace llvm;

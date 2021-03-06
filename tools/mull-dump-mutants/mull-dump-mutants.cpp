@@ -29,9 +29,8 @@ int main(int argc, char **argv) {
   mull::Diagnostics diagnostics;
   mull::MutatorsFactory factory(diagnostics);
   std::vector<std::unique_ptr<mull::MutationPoint>> pointsOwner;
-  std::vector<std::unique_ptr<mull::Mutator>> mutators;
   factory.init();
-  auto result = ExtractMutantInfo(InputFile, factory, mutators, pointsOwner);
+  auto result = ExtractMutantInfo(InputFile, factory, pointsOwner);
   if (!result) {
     llvm::report_fatal_error(result.takeError());
   }

@@ -23,7 +23,6 @@ class XCTestRunInvocation {
   const mull::Configuration &config;
   mull::SingleTaskExecutor singleTask;
 
-  std::vector<std::unique_ptr<mull::Mutator>> mutatorsOwner;
   std::vector<std::unique_ptr<mull::MutationPoint>> allPoints;
 
 public:
@@ -41,9 +40,7 @@ public:
   std::unique_ptr<mull::Result> run();
 
 private:
-  std::vector<std::unique_ptr<mull::Mutant>> extractMutantInfo(
-      std::vector<std::unique_ptr<mull::Mutator>> &mutators,
-      std::vector<std::unique_ptr<mull::MutationPoint>> &allPoints);
+  std::vector<std::unique_ptr<mull::Mutant>> extractMutantInfo();
 };
 } // namespace mull_xctest
 
