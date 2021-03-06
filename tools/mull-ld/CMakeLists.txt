@@ -21,7 +21,6 @@ add_custom_command(
 )
 
 
-llvm_map_components_to_libnames(llvm_libs all)
 add_executable(mull-ld
   mull-ld.cpp
   LinkerInvocation.cpp
@@ -35,9 +34,24 @@ target_include_directories(mull-ld
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(mull-ld
   mullXCTest mullSwiftSupport
-  mull MullVersion ebc json11
-  ${llvm_libs})
+  mull MullVersion ebc json11)
 add_custom_target(ld ALL
   COMMAND ${CMAKE_COMMAND}
     -E create_symlink $<TARGET_FILE:mull-ld> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ld
   DEPENDS mull-ld)
+
+install(TARGETS mull-ld)
+
+foreach(path ${CMAKE_MODULE_PATH})
+  if(EXISTS ${path}/InstallSymlink.cmake)
+    set(INSTALL_SYMLINK ${path}/InstallSymlink.cmake)
+    break()
+  endif()
+endforeach()
+
+install(SCRIPT ${INSTALL_SYMLINK}
+  CODE "install_symlink(ld ../mull-ld bin/mull-tools)"
+  COMPONENT ${component})
+
+install(FILES $<TARGET_PROPERTY:SwiftSyntaxParser::SwiftSyntaxParser,IMPORTED_LOCATION>
+DESTINATION lib/mull-support)

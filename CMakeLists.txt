@@ -15,6 +15,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
+  set(CMAKE_INSTALL_RPATH @executable_path/../lib/mull-support)
+endif()
+
 set(PATH_TO_LLVM "" CACHE PATH "Path to installed LLVM or LLVM source tree")
 
 find_package(LLVM REQUIRED CONFIG PATHS ${PATH_TO_LLVM} NO_DEFAULT_PATH)

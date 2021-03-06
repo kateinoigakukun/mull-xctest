@@ -5,3 +5,5 @@ add_executable(mull-xctestrun
   XCTestRunInvocation.h)
 target_link_libraries(mull-xctestrun
   mullXCTest mull MullVersion ebc json11 ${llvm_libs})
+
+install(TARGETS mull-xctestrun)

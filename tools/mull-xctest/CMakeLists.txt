@@ -4,3 +4,5 @@ add_executable(mull-xctest
   XCTestInvocation.cpp
   XCTestInvocation.h)
 target_link_libraries(mull-xctest mullXCTest mull MullVersion ${llvm_libs})
+
+install(TARGETS mull-xctest)
