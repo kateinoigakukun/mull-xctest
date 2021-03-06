@@ -43,17 +43,39 @@ ExecutionResult RunXcodeBuildTest(Runner &runner,
     arguments.push_back("-resultBundlePath");
     arguments.push_back(resultBundlePath.getValue());
   }
+  if (timeout > 0) {
+    arguments.push_back("-test-timeouts-enabled");
+    arguments.push_back("YES");
+    arguments.push_back("-maximum-test-execution-time-allowance");
+    arguments.push_back(std::to_string(timeout / 1000));
+  }
   return runner.runProgram("/usr/bin/xcodebuild", arguments, environment,
-                           timeout, captureOutput);
+                           -1, captureOutput);
+}
+
+void GenerateSingleTargetXCRunFile(const std::string &srcRunFile,
+                                   const std::string &localRunFile,
+                                   const std::string &srcTestTarget) {
+  llvm::sys::fs::copy_file(srcRunFile, localRunFile);
+  XCTestRunFile runFile(localRunFile);
+  auto maybeTargets = runFile.getTargets();
+  if (!maybeTargets) {
+    llvm::report_fatal_error(llvm::toString(maybeTargets.takeError()));
+  }
+  for (auto target : *maybeTargets) {
+    if (target != srcTestTarget) {
+      runFile.deleteTestTarget(target);
+    }
+  }
 }
 
 using Mutants = const std::vector<std::unique_ptr<Mutant>>;
 
-std::string GenerateXCRunFile(const std::string &srcRunFile,
-                              const std::string &localRunFile,
-                              const std::string &srcTestTarget,
-                              const Mutants::const_iterator &mutants_begin,
-                              const Mutants::const_iterator &mutants_end) {
+void GenerateXCRunFile(const std::string &srcRunFile,
+                       const std::string &localRunFile,
+                       const std::string &srcTestTarget,
+                       const Mutants::const_iterator &mutants_begin,
+                       const Mutants::const_iterator &mutants_end) {
   llvm::sys::fs::copy_file(srcRunFile, localRunFile);
   XCTestRunFile runFile(localRunFile);
   for (auto it = mutants_begin; it != mutants_end; ++it) {
@@ -64,7 +86,6 @@ std::string GenerateXCRunFile(const std::string &srcRunFile,
     runFile.setBlueprintName(newTarget, mutant->getIdentifier());
   }
   runFile.deleteTestTarget(srcTestTarget);
-  return localRunFile;
 }
 
 class MutantExecutionTask {
@@ -140,10 +161,13 @@ std::unique_ptr<Result> XCTestRunInvocation::run() {
   auto mutants = extractMutantInfo(mutatorsOwner, allPoints);
   Runner runner(diagnostics);
 
+  std::string singleTargetRunFile = xctestrunFile.str() + ".mull-xctrn-base.xctestrun";
+  GenerateSingleTargetXCRunFile(xctestrunFile.str(), singleTargetRunFile, testTarget);
+
   ExecutionResult baseline;
   singleTask.execute("Baseline run", [&]() {
     baseline =
-        RunXcodeBuildTest(runner, xctestrunFile.str(), llvm::None, xcodebuildArgs, {},
+        RunXcodeBuildTest(runner, singleTargetRunFile, llvm::None, xcodebuildArgs, {},
                           config.timeout, config.captureMutantOutput);
   });
 
@@ -151,7 +175,7 @@ std::unique_ptr<Result> XCTestRunInvocation::run() {
   std::vector<MutantExecutionTask> tasks;
   tasks.reserve(config.parallelization.mutantExecutionWorkers);
   for (int i = 0; i < config.parallelization.mutantExecutionWorkers; i++) {
-    tasks.emplace_back(i, config, diagnostics, xctestrunFile.str(), resultBundleDir, testTarget,
+    tasks.emplace_back(i, config, diagnostics, singleTargetRunFile, resultBundleDir, testTarget,
                        xcodebuildArgs, baseline);
   }
   TaskExecutor<MutantExecutionTask> mutantRunner(diagnostics, "Running mutants",

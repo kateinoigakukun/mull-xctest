@@ -141,6 +141,51 @@ XCTestRunFile::getDependentProductPaths(std::string targetName) {
   return std::move(results);
 }
 
+llvm::Expected<std::vector<std::string>>
+XCTestRunFile::getTargets() {
+  llvm::SmallString<64> outFile;
+  llvm::sys::fs::createTemporaryFile("mull-xctestrun-tgt", "", outFile);
+  llvm::FileRemover outRemover(outFile);
+  llvm::ArrayRef<llvm::StringRef> args = {
+      "/usr/bin/plutil", "-convert", "json", filePath, "-o", outFile};
+  std::string ErrMsg;
+  int Ret = llvm::sys::ExecuteAndWait("/usr/bin/plutil", args,
+                                      /*Env=*/llvm::None, {},
+                                      /*SecondsToWait=*/0,
+                                      0, &ErrMsg);
+  if (Ret != 0) {
+    llvm::dbgs() << "ErrMsg: " << ErrMsg << "\n";
+    return llvm::make_error<llvm::StringError>(
+        "failed to convert xctestrun file to json.",
+        llvm::inconvertibleErrorCode());
+  }
+  auto fileBuf = llvm::MemoryBuffer::getFile(outFile);
+  if (!fileBuf) {
+    return llvm::make_error<llvm::StringError>("failed open plutil result file",
+                                               fileBuf.getError());
+  }
+
+  llvm::Expected<llvm::json::Value> result =
+      llvm::json::parse(fileBuf.get()->getBuffer());
+  if (!result) {
+    return result.takeError();
+  }
+
+  auto *productPaths = result->getAsObject();
+  assert(productPaths);
+
+  std::vector<std::string> results;
+
+  for (auto pair : *productPaths) {
+    std::string targetName = pair.first.str();
+    if (targetName == "__xctestrun_metadata__") {
+      continue;
+    }
+    results.push_back(targetName);
+  }
+  return std::move(results);
+}
+
 bool XCTestRunFile::duplicateTestTarget(std::string srcTargetName, std::string newTargetName) {
   escapeColon(srcTargetName);
   escapeColon(newTargetName);

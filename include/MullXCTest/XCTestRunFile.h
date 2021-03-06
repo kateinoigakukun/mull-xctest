@@ -17,6 +17,7 @@ public:
   bool setBlueprintName(std::string targetName, const std::string &name);
   llvm::Expected<std::vector<std::string>>
   getDependentProductPaths(std::string targetName);
+  llvm::Expected<std::vector<std::string>> getTargets();
   bool duplicateTestTarget(std::string srcTargetName, std::string newTargetName);
   bool deleteTestTarget(std::string targetName);
 };

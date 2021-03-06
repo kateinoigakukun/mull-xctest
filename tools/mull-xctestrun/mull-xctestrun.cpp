@@ -24,7 +24,7 @@ opt<std::string> ResultBundleDir("result-bundle-dir", desc("test result bundle d
 
 opt<unsigned> Timeout("timeout", desc("Timeout per test run (milliseconds)"),
                       Optional, value_desc("number"),
-                      init(mull::MullDefaultTimeoutMilliseconds));
+                      init(60 * 1000));
 
 opt<unsigned> Workers("workers", desc("How many threads to use"), Optional,
                       value_desc("number"));
