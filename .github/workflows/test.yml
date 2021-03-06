@@ -55,3 +55,11 @@ jobs:
         ninja mullXCTest-tests
         ninja test
         lit tests -v --path $PWD/bin
+    - name: Package artifacts
+      run: |
+        DESTDIR=install ninja -C build install
+        tar cfz mull-xctest-x86_64-apple-darwin.tar.gz -C build/install .
+    - uses: actions/upload-artifact@v2
+      with:
+        name: mull-xctest-x86_64-apple-darwin
+        path: mull-xctest-x86_64-apple-darwin.tar.gz
