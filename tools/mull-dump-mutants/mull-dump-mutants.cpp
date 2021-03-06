@@ -29,61 +29,19 @@ int main(int argc, char **argv) {
   mull::Diagnostics diagnostics;
   mull::MutatorsFactory factory(diagnostics);
   std::vector<std::unique_ptr<mull::MutationPoint>> pointsOwner;
+  std::vector<std::unique_ptr<mull::Mutator>> mutators;
   factory.init();
-
-  auto binaryOrErr = object::createBinary(InputFile);
-  if (!binaryOrErr) {
-    std::stringstream errorMessage;
-    errorMessage << "createBinary failed: \""
-                 << toString(binaryOrErr.takeError()) << "\".";
-    diagnostics.error(errorMessage.str());
-    return 1;
-  }
-  const auto *machOObjectFile =
-      dyn_cast<object::MachOObjectFile>(binaryOrErr->getBinary());
-  if (!machOObjectFile) {
-    diagnostics.error("input file is not mach-o object file");
-    return 1;
-  }
-  auto sectionName = MULL_MUTANTS_INFO_SECTION_NAME_STR;
-  Expected<object::SectionRef> section =
-      machOObjectFile->getSection(sectionName);
-  if (!section) {
-    diagnostics.error("section " MULL_MUTANTS_INFO_SECTION_NAME_STR
-                      " not found");
-    llvm::consumeError(section.takeError());
-    return 1;
+  auto result = ExtractMutantInfo(InputFile, factory, mutators, pointsOwner);
+  if (!result) {
+    llvm::report_fatal_error(result.takeError());
   }
 
-  Expected<StringRef> contentsData = section->getContents();
-  if (!contentsData) {
-    std::stringstream errorMessage;
-    errorMessage << "section->getContents failed: \""
-                 << toString(contentsData.takeError()) << "\".";
-    diagnostics.error(errorMessage.str());
-  }
-  MutantDeserializer deserializer(contentsData.get(), factory);
-
-  std::vector<std::unique_ptr<mull::Mutant>> mutants;
-  while (!deserializer.isEOF()) {
-    std::unique_ptr<mull::MutationPoint> point = deserializer.deserialize();
-    if (!point) {
-      diagnostics.error("failed to deserialize mutants.");
-      break;
-    }
-    std::string id = point->getUserIdentifier();
-    pointsOwner.push_back(std::move(point));
-    std::vector<mull::MutationPoint *> points;
-    points.push_back(pointsOwner.back().get());
-    mutants.push_back(std::make_unique<Mutant>(id, points));
-  }
-
-  if (mutants.empty()) {
+  if (result->empty()) {
     llvm::outs() << "no mutant info found\n";
     return 0;
   }
 
-  for (auto &mutant : mutants) {
+  for (auto &mutant : *result) {
     llvm::outs() << mutant->getMutationPoints().front()->dump() << "\n";
   }
   return 0;
