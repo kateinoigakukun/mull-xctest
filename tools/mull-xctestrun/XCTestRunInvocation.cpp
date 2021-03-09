@@ -10,6 +10,7 @@
 #include <mull/MutationResult.h>
 #include <mull/Parallelization/Parallelization.h>
 #include <mull/Toolchain/Runner.h>
+#include <reproc++/reproc.hpp>
 #include <set>
 #include <sstream>
 
@@ -29,7 +30,7 @@ std::string GetBundleBinaryPath(std::string &bundlePath) {
 }
 
 ExecutionResult
-RunXcodeBuildTest(Runner &runner, const std::string &xctestrunFile,
+RunXcodeBuildTest(Diagnostics &diagnostics, const std::string &xctestrunFile,
                   const llvm::Optional<std::string> &resultBundlePath,
                   const std::vector<std::string> &extraArgs,
                   const std::vector<std::string> &environment,
@@ -49,8 +50,50 @@ RunXcodeBuildTest(Runner &runner, const std::string &xctestrunFile,
     arguments.push_back("-maximum-test-execution-time-allowance");
     arguments.push_back(std::to_string(timeout / 1000));
   }
-  return runner.runProgram("/usr/bin/xcodebuild", arguments, environment, -1,
-                           captureOutput);
+
+  std::vector<std::pair<std::string, std::string>> env;
+  env.reserve(environment.size());
+  for (auto &e : environment) {
+    env.emplace_back(e, "1");
+  }
+
+  reproc::options options;
+  options.env.extra = reproc::env(env);
+  options.redirect.path = "";
+
+  std::vector<std::string> allArguments{"/usr/bin/xcodebuild"};
+  std::copy(std::begin(arguments), std::end(arguments),
+            std::back_inserter(allArguments));
+  auto start = std::chrono::high_resolution_clock::now();
+
+  reproc::process process;
+  std::error_code ec = process.start(allArguments, options);
+  if (ec) {
+    std::stringstream errorMessage;
+    errorMessage << "Cannot run executable: " << ec.message() << '\n';
+    diagnostics.error(errorMessage.str());
+  }
+
+  int status;
+  std::tie(status, ec) = process.wait(reproc::milliseconds(timeout));
+  ExecutionStatus executionStatus = Failed;
+  if (ec == std::errc::timed_out) {
+    process.kill();
+    executionStatus = Timedout;
+  } else if (status == 0) {
+    executionStatus = Passed;
+  } else {
+    executionStatus = Failed;
+  }
+
+  auto elapsed = std::chrono::high_resolution_clock::now() - start;
+  ExecutionResult result;
+  result.runningTime =
+      std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+  result.exitStatus = status;
+  result.status = executionStatus;
+
+  return result;
 }
 
 void GenerateSingleTargetXCRunFile(const std::string &srcRunFile,
@@ -138,7 +181,7 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
   std::string resultBundlePath =
       ResultBundlePath(resultBundleDir, targetName, taskID);
   ExecutionResult result;
-  result = RunXcodeBuildTest(runner, localRunFile, resultBundlePath,
+  result = RunXcodeBuildTest(diagnostics, localRunFile, resultBundlePath,
                              xcodebuildArgs, {}, baseline.runningTime * 10,
                              configuration.captureMutantOutput);
   XCResultFile resultFile(resultBundlePath);
@@ -167,14 +210,14 @@ std::unique_ptr<Result> XCTestRunInvocation::run() {
   Runner runner(diagnostics);
 
   std::string singleTargetRunFile =
-      xctestrunFile.str() + ".mull-xctrn-base.xctestrun";
-  GenerateSingleTargetXCRunFile(xctestrunFile.str(), singleTargetRunFile,
-                                testTarget);
+      runConfig.xctestrunFile.str() + ".mull-xctrn-base.xctestrun";
+  GenerateSingleTargetXCRunFile(runConfig.xctestrunFile.str(),
+                                singleTargetRunFile, runConfig.testTarget);
 
   ExecutionResult baseline;
   singleTask.execute("Baseline run", [&]() {
-    baseline = RunXcodeBuildTest(runner, singleTargetRunFile, llvm::None,
-                                 xcodebuildArgs, {}, config.timeout,
+    baseline = RunXcodeBuildTest(diagnostics, singleTargetRunFile, llvm::None,
+                                 runConfig.xcodebuildArgs, {}, config.timeout,
                                  config.captureMutantOutput);
   });
 
@@ -183,7 +226,8 @@ std::unique_ptr<Result> XCTestRunInvocation::run() {
   tasks.reserve(config.parallelization.mutantExecutionWorkers);
   for (int i = 0; i < config.parallelization.mutantExecutionWorkers; i++) {
     tasks.emplace_back(i, config, diagnostics, singleTargetRunFile,
-                       resultBundleDir, testTarget, xcodebuildArgs, baseline);
+                       runConfig.resultBundleDir, runConfig.testTarget,
+                       runConfig.xcodebuildArgs, baseline);
   }
   TaskExecutor<MutantExecutionTask> mutantRunner(diagnostics, "Running mutants",
                                                  mutants, mutationResults,
@@ -198,8 +242,8 @@ std::unique_ptr<Result> XCTestRunInvocation::run() {
 
 std::vector<std::unique_ptr<mull::Mutant>>
 XCTestRunInvocation::extractMutantInfo() {
-  XCTestRunFile file(xctestrunFile.str());
-  auto products = file.getDependentProductPaths(testTarget);
+  XCTestRunFile file(runConfig.xctestrunFile.str());
+  auto products = file.getDependentProductPaths(runConfig.testTarget);
   if (!products) {
     diagnostics.error(llvm::toString(products.takeError()));
     return {};

@@ -50,20 +50,25 @@ int main(int argc, char **argv) {
     configuration.parallelization.workers = Workers;
     configuration.parallelization.mutantExecutionWorkers = Workers;
   }
+  mull_xctest::XCTestRunConfig runConfig;
+  runConfig.xctestrunFile = TestRunFile;
+  runConfig.testTarget = TestTarget;
 
   llvm::SmallString<128> resultBundleDir(ResultBundleDir);
   if (resultBundleDir.empty()) {
     llvm::sys::fs::createUniqueDirectory("mull-xcresult", resultBundleDir);
   }
+  runConfig.resultBundleDir = resultBundleDir.str().str();
+  runConfig.xcodebuildArgs = XcodeBuildArgs;
+
   if (configuration.debugEnabled) {
     diagnostics.enableDebugMode();
   }
 
   factory.init();
 
-  mull_xctest::XCTestRunInvocation invocation(
-      TestRunFile, TestTarget, resultBundleDir.str().str(), XcodeBuildArgs,
-      factory, diagnostics, configuration);
+  mull_xctest::XCTestRunInvocation invocation(factory, diagnostics,
+                                              configuration, runConfig);
   mull::IDEReporter reporter(diagnostics);
   auto results = invocation.run();
   reporter.reportResults(*results);

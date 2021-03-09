@@ -13,29 +13,28 @@
 #include <mull/Result.h>
 
 namespace mull_xctest {
-class XCTestRunInvocation {
-  const llvm::StringRef xctestrunFile;
-  const std::string testTarget;
+struct XCTestRunConfig {
+  llvm::StringRef xctestrunFile;
+  std::string testTarget;
   std::string resultBundleDir;
-  const std::vector<std::string> xcodebuildArgs;
+  std::vector<std::string> xcodebuildArgs;
+};
+class XCTestRunInvocation {
   mull::MutatorsFactory &factory;
   mull::Diagnostics &diagnostics;
   const mull::Configuration &config;
+  const XCTestRunConfig &runConfig;
   mull::SingleTaskExecutor singleTask;
 
   std::vector<std::unique_ptr<mull::MutationPoint>> allPoints;
 
 public:
-  XCTestRunInvocation(const llvm::StringRef testBundle,
-                      const std::string testTarget, std::string resultBundleDir,
-                      const std::vector<std::string> xcodebuildArgs,
-                      mull::MutatorsFactory &factory,
+  XCTestRunInvocation(mull::MutatorsFactory &factory,
                       mull::Diagnostics &diagnostics,
-                      const mull::Configuration &config)
-      : xctestrunFile(testBundle), testTarget(testTarget),
-        resultBundleDir(resultBundleDir), xcodebuildArgs(xcodebuildArgs),
-        factory(factory), diagnostics(diagnostics), config(config),
-        singleTask(diagnostics) {}
+                      const mull::Configuration &config,
+                      const XCTestRunConfig &runConfig)
+      : factory(factory), diagnostics(diagnostics), config(config),
+        runConfig(runConfig), singleTask(diagnostics) {}
   std::unique_ptr<mull::Result> run();
 
 private:
