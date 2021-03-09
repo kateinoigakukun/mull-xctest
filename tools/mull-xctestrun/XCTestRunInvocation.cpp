@@ -45,6 +45,8 @@ ExecutionResult RunProgram(Diagnostics &diagnostics, const std::string &program,
   options.env.extra = reproc::env(env);
   if (!logPath.empty()) {
     options.redirect.path = logPath.c_str();
+  } else {
+    options.redirect.err.type = reproc::redirect::type::pipe;
   }
 
   std::vector<std::string> allArguments{program};
