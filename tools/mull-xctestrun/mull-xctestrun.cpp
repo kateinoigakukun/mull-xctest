@@ -22,6 +22,9 @@ opt<std::string> ResultBundleDir("result-bundle-dir",
                                  desc("test result bundle directory"), Optional,
                                  value_desc("directory path"));
 
+opt<std::string> LogDir("log-dir", desc("log output directory"), Optional,
+                        value_desc("directory path"));
+
 opt<unsigned> Timeout("timeout", desc("Timeout per test run (milliseconds)"),
                       Optional, value_desc("number"), init(60 * 1000));
 
@@ -60,6 +63,7 @@ int main(int argc, char **argv) {
   }
   runConfig.resultBundleDir = resultBundleDir.str().str();
   runConfig.xcodebuildArgs = XcodeBuildArgs;
+  runConfig.logPath = LogDir;
 
   if (configuration.debugEnabled) {
     diagnostics.enableDebugMode();

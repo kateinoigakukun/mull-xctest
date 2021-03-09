@@ -29,27 +29,11 @@ std::string GetBundleBinaryPath(std::string &bundlePath) {
   return binaryPath.str().str();
 }
 
-ExecutionResult
-RunXcodeBuildTest(Diagnostics &diagnostics, const std::string &xctestrunFile,
-                  const llvm::Optional<std::string> &resultBundlePath,
-                  const std::vector<std::string> &extraArgs,
-                  const std::vector<std::string> &environment,
-                  long long int timeout, bool captureOutput) {
-  std::vector<std::string> arguments;
-  arguments.push_back("test-without-building");
-  std::copy(extraArgs.begin(), extraArgs.end(), std::back_inserter(arguments));
-  arguments.push_back("-xctestrun");
-  arguments.push_back(xctestrunFile);
-  if (resultBundlePath) {
-    arguments.push_back("-resultBundlePath");
-    arguments.push_back(resultBundlePath.getValue());
-  }
-  if (timeout > 0) {
-    arguments.push_back("-test-timeouts-enabled");
-    arguments.push_back("YES");
-    arguments.push_back("-maximum-test-execution-time-allowance");
-    arguments.push_back(std::to_string(timeout / 1000));
-  }
+ExecutionResult RunProgram(Diagnostics &diagnostics, const std::string &program,
+                           const std::vector<std::string> &arguments,
+                           const std::vector<std::string> &environment,
+                           long long int timeout, const std::string &logPath) {
+  using namespace std::string_literals;
 
   std::vector<std::pair<std::string, std::string>> env;
   env.reserve(environment.size());
@@ -59,9 +43,11 @@ RunXcodeBuildTest(Diagnostics &diagnostics, const std::string &xctestrunFile,
 
   reproc::options options;
   options.env.extra = reproc::env(env);
-  options.redirect.path = "";
+  if (!logPath.empty()) {
+    options.redirect.path = logPath.c_str();
+  }
 
-  std::vector<std::string> allArguments{"/usr/bin/xcodebuild"};
+  std::vector<std::string> allArguments{program};
   std::copy(std::begin(arguments), std::end(arguments),
             std::back_inserter(allArguments));
   auto start = std::chrono::high_resolution_clock::now();
@@ -94,6 +80,32 @@ RunXcodeBuildTest(Diagnostics &diagnostics, const std::string &xctestrunFile,
   result.status = executionStatus;
 
   return result;
+}
+
+ExecutionResult
+RunXcodeBuildTest(Diagnostics &diagnostics, const std::string &xctestrunFile,
+                  const llvm::Optional<std::string> &resultBundlePath,
+                  const std::vector<std::string> &extraArgs,
+                  const std::vector<std::string> &environment,
+                  long long int timeout, const std::string &logPath) {
+  std::vector<std::string> arguments;
+  arguments.push_back("test-without-building");
+  std::copy(extraArgs.begin(), extraArgs.end(), std::back_inserter(arguments));
+  arguments.push_back("-xctestrun");
+  arguments.push_back(xctestrunFile);
+  if (resultBundlePath) {
+    arguments.push_back("-resultBundlePath");
+    arguments.push_back(resultBundlePath.getValue());
+  }
+  if (timeout > 0) {
+    arguments.push_back("-test-timeouts-enabled");
+    arguments.push_back("YES");
+    arguments.push_back("-maximum-test-execution-time-allowance");
+    arguments.push_back(std::to_string(timeout / 1000));
+  }
+
+  return RunProgram(diagnostics, "/usr/bin/xcodebuild", arguments, environment,
+                    timeout, logPath);
 }
 
 void GenerateSingleTargetXCRunFile(const std::string &srcRunFile,
@@ -139,14 +151,11 @@ public:
 
   MutantExecutionTask(const int taskID, const Configuration &configuration,
                       Diagnostics &diagnostics, const std::string xctestrunFile,
-                      const std::string resultBundleDir,
-                      const std::string targetName,
-                      const std::vector<std::string> xcodebuildArgs,
+                      const XCTestRunConfig &runConfig,
                       ExecutionResult &baseline)
       : taskID(taskID), configuration(configuration), diagnostics(diagnostics),
-        xctestrunFile(xctestrunFile), resultBundleDir(resultBundleDir),
-        targetName(targetName), xcodebuildArgs(xcodebuildArgs),
-        baseline(baseline) {}
+        xctestrunFile(xctestrunFile), runConfig(runConfig), baseline(baseline) {
+  }
 
   void operator()(iterator begin, iterator end, Out &storage,
                   progress_counter &counter);
@@ -154,11 +163,9 @@ public:
 private:
   const int taskID;
   const Configuration &configuration;
+  const XCTestRunConfig &runConfig;
   Diagnostics &diagnostics;
   const std::string xctestrunFile;
-  const std::string resultBundleDir;
-  const std::string targetName;
-  const std::vector<std::string> xcodebuildArgs;
   ExecutionResult &baseline;
 };
 
@@ -177,13 +184,18 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
   const std::string localRunFile =
       xctestrunFile + ".mull-xctrn-" + std::to_string(taskID) + ".xctestrun";
 
-  GenerateXCRunFile(xctestrunFile, localRunFile, targetName, begin, end);
+  GenerateXCRunFile(xctestrunFile, localRunFile, runConfig.testTarget, begin,
+                    end);
   std::string resultBundlePath =
-      ResultBundlePath(resultBundleDir, targetName, taskID);
+      ResultBundlePath(runConfig.resultBundleDir, runConfig.testTarget, taskID);
   ExecutionResult result;
+  llvm::SmallString<128> logPath(runConfig.logPath);
+  if (!logPath.empty())
+    llvm::sys::path::append(logPath, std::to_string(taskID) + ".log");
+
   result = RunXcodeBuildTest(diagnostics, localRunFile, resultBundlePath,
-                             xcodebuildArgs, {}, baseline.runningTime * 10,
-                             configuration.captureMutantOutput);
+                             runConfig.xcodebuildArgs, {},
+                             baseline.runningTime * 10, logPath.str().str());
   XCResultFile resultFile(resultBundlePath);
   auto failureTargets = resultFile.getFailureTestTargets();
   if (!failureTargets) {
@@ -216,18 +228,21 @@ std::unique_ptr<Result> XCTestRunInvocation::run() {
 
   ExecutionResult baseline;
   singleTask.execute("Baseline run", [&]() {
+    llvm::SmallString<128> logPath(runConfig.logPath);
+    if (!logPath.empty())
+      llvm::sys::path::append(logPath, "baseline.log");
+
     baseline = RunXcodeBuildTest(diagnostics, singleTargetRunFile, llvm::None,
                                  runConfig.xcodebuildArgs, {}, config.timeout,
-                                 config.captureMutantOutput);
+                                 logPath.str().str());
   });
 
   std::vector<std::unique_ptr<MutationResult>> mutationResults;
   std::vector<MutantExecutionTask> tasks;
   tasks.reserve(config.parallelization.mutantExecutionWorkers);
   for (int i = 0; i < config.parallelization.mutantExecutionWorkers; i++) {
-    tasks.emplace_back(i, config, diagnostics, singleTargetRunFile,
-                       runConfig.resultBundleDir, runConfig.testTarget,
-                       runConfig.xcodebuildArgs, baseline);
+    tasks.emplace_back(i, config, diagnostics, singleTargetRunFile, runConfig,
+                       baseline);
   }
   TaskExecutor<MutantExecutionTask> mutantRunner(diagnostics, "Running mutants",
                                                  mutants, mutationResults,

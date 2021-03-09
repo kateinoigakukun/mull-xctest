@@ -18,6 +18,7 @@ struct XCTestRunConfig {
   std::string testTarget;
   std::string resultBundleDir;
   std::vector<std::string> xcodebuildArgs;
+  std::string logPath;
 };
 class XCTestRunInvocation {
   mull::MutatorsFactory &factory;
