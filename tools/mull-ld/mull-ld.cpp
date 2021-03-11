@@ -18,6 +18,7 @@
 #include <mull/Mutators/MutatorsFactory.h>
 #include <mull/Parallelization/TaskExecutor.h>
 #include <mull/Toolchain/Runner.h>
+#include "MullXCTest/MutationPipeline.h"
 #include <string>
 #include <unistd.h>
 #include <vector>
@@ -81,16 +82,6 @@ void filterMullOptions(const llvm::ArrayRef<const char *> &args,
       linkerArgs.push_back(args[index]);
     }
     index++;
-  }
-}
-
-void extractBitcodeFiles(std::vector<std::string> &args,
-                         std::vector<llvm::StringRef> &bitcodeFiles) {
-  for (const auto &rawArg : args) {
-    llvm::StringRef arg(rawArg);
-    if (arg.endswith(".o")) {
-      bitcodeFiles.push_back(arg);
-    }
   }
 }
 
@@ -170,8 +161,8 @@ void bootstrapConfiguration(mull::Configuration &configuration,
   configuration.timeout = mull::MullDefaultTimeoutMilliseconds;
 }
 
-void bootstrapInvocationConfiguration(
-    mull_xctest::InvocationConfig &configuration,
+void bootstrapPipelineConfiguration(
+    mull_xctest::MutationPipelineConfig &configuration,
     mull::Diagnostics &diagnostics) {
   if (DumpLLVM.empty()) {
     configuration.DumpLLVM = llvm::None;
@@ -250,12 +241,12 @@ int main(int argc, char **argv) {
   std::vector<std::unique_ptr<mull::Filter>> filterStorage;
   mull::Filters filters;
   mull::Configuration configuration;
-  mull_xctest::InvocationConfig invocationConfig;
+  mull_xctest::MutationPipelineConfig pipelineConfig;
 
   bootstrapConfiguration(configuration, diagnostics);
 
   validateConfiguration(configuration, diagnostics);
-  bootstrapInvocationConfiguration(invocationConfig, diagnostics);
+  bootstrapPipelineConfiguration(pipelineConfig, diagnostics);
 
   bootstrapFilters(filters, diagnostics, filterStorage);
   mull::MutatorsFactory factory(diagnostics);
@@ -268,10 +259,12 @@ int main(int argc, char **argv) {
 
   std::vector<llvm::StringRef> targetExecutables(TargetExecutables.begin(),
                                                  TargetExecutables.end());
-  mull_xctest::LinkerInvocation invocation(
-      inputObjects, targetExecutables, filters, mutationsFinder, options,
-      diagnostics, configuration, invocationConfig);
-  invocation.run();
+  mull_xctest::MutationPipeline pipeline(
+      inputObjects, targetExecutables, filters, mutationsFinder,
+      diagnostics, configuration, pipelineConfig);
+
+  std::vector<std::string> objectFiles = pipeline.run();
+  mull_xctest::link(objectFiles, options, configuration, diagnostics);
   llvm::llvm_shutdown();
   return 0;
 }

@@ -5,6 +5,7 @@ set(mullXCTest_sources
     MutantSerialization.cpp
     XCTestRunFile.cpp
     XCResultFile.cpp
+    MutationPipeline.cpp
 )
 set(mullXCTest_headers
     ${MULL_XCTEST_INCLUDE_DIR}/Tasks/ExtractEmbeddedFileTask.h
@@ -14,6 +15,7 @@ set(mullXCTest_headers
     ${MULL_XCTEST_INCLUDE_DIR}/PthreadTaskExecutor.h
     ${MULL_XCTEST_INCLUDE_DIR}/XCTestRunFile.h
     ${MULL_XCTEST_INCLUDE_DIR}/XCResultFile.h
+    ${MULL_XCTEST_INCLUDE_DIR}/MutationPipeline.h
 )
 
 add_library(mullXCTest STATIC

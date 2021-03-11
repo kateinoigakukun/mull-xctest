@@ -15,51 +15,10 @@
 #include <vector>
 
 namespace mull_xctest {
-struct InvocationConfig {
-  llvm::Optional<std::string> DumpLLVM;
-  bool EnableSyntaxFilter;
-};
-
-class LinkerInvocation {
-  std::vector<std::string> inputObjects;
-  const std::vector<llvm::StringRef> &targetExecutables;
-  mull::Diagnostics &diagnostics;
-  const mull::Configuration &config;
-  const InvocationConfig &invocationConfig;
-  LinkerOptions &linkerOpts;
-  mull::SingleTaskExecutor singleTask;
-  struct mull::Filters &filters;
-  mull::MutationsFinder &mutationsFinder;
-  std::unique_ptr<mull::MutationFilter> syntaxFilterOwner;
-
-public:
-  LinkerInvocation(std::vector<std::string> inputObjects,
-                   const std::vector<llvm::StringRef> &targetExecutables,
-                   struct mull::Filters &filters,
-                   mull::MutationsFinder &mutationsFinder,
-                   LinkerOptions &originalArgs, mull::Diagnostics &diagnostics,
-                   const mull::Configuration &config,
-                   const InvocationConfig &invocationConfig)
-      : inputObjects(inputObjects), targetExecutables(targetExecutables),
-        filters(filters), mutationsFinder(mutationsFinder),
-        linkerOpts(originalArgs), diagnostics(diagnostics), config(config),
-        singleTask(diagnostics), invocationConfig(invocationConfig) {}
-  void run();
-
-private:
-  std::vector<mull::FunctionUnderTest>
-  getFunctionsUnderTest(mull::Program &program);
-  std::vector<mull::FunctionUnderTest>
-  filterFunctions(std::vector<mull::FunctionUnderTest> functions);
-  std::vector<mull::MutationPoint *> findMutationPoints(mull::Program &program);
-  void setupSyntaxFilter(std::vector<mull::MutationPoint *> &mutationPoints);
-  std::vector<mull::MutationPoint *>
-  filterMutations(std::vector<mull::MutationPoint *> mutationPoints);
-  void selectInstructions(std::vector<mull::FunctionUnderTest> &functions);
-  void applyMutation(mull::Program &program,
-                     std::vector<mull::MutationPoint *> &mutationPoints);
-  void link(std::vector<std::string> objectFiles);
-};
+void link(std::vector<std::string> objectFiles,
+          LinkerOptions &linkerOpts,
+          const mull::Configuration &config,
+          mull::Diagnostics &diagnostics);
 } // namespace mull_xctest
 
 #endif
