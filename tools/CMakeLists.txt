@@ -1,4 +1,5 @@
 add_subdirectory(mull-ld)
+add_subdirectory(mull-libtool)
 add_subdirectory(mull-xctest)
 add_subdirectory(mull-dump-mutants)
 add_subdirectory(mull-xctestrun)
