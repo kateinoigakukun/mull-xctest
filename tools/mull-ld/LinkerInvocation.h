@@ -15,10 +15,8 @@
 #include <vector>
 
 namespace mull_xctest {
-void link(std::vector<std::string> objectFiles,
-          LinkerOptions &linkerOpts,
-          const mull::Configuration &config,
-          mull::Diagnostics &diagnostics);
+void link(std::vector<std::string> objectFiles, LinkerOptions &linkerOpts,
+          const mull::Configuration &config, mull::Diagnostics &diagnostics);
 } // namespace mull_xctest
 
 #endif

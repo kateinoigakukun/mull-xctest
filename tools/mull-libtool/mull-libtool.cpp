@@ -1,11 +1,12 @@
-#include <llvm/Support/CommandLine.h>
-#include <llvm/Support/TargetRegistry.h>
-#include <llvm/Support/TargetSelect.h>
-#include <llvm/Option/ArgList.h>
+#include "MullXCTest/MutationPipeline.h"
 #include <llvm/ADT/Optional.h>
+#include <llvm/Option/ArgList.h>
 #include <llvm/Option/OptTable.h>
 #include <llvm/Option/Option.h>
+#include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FileUtilities.h>
+#include <llvm/Support/TargetRegistry.h>
+#include <llvm/Support/TargetSelect.h>
 #include <mull/Config/Configuration.h>
 #include <mull/Diagnostics/Diagnostics.h>
 #include <mull/Filters/FilePathFilter.h>
@@ -16,9 +17,8 @@
 #include <mull/MutationsFinder.h>
 #include <mull/Mutators/MutatorsFactory.h>
 #include <mull/Toolchain/Runner.h>
-#include "MullXCTest/MutationPipeline.h"
-#include <unistd.h>
 #include <sstream>
+#include <unistd.h>
 
 namespace mull_xctest {
 namespace libtool {
@@ -32,7 +32,6 @@ enum {
 #undef OPTION
 };
 
-
 #define PREFIX(NAME, VALUE) const char *NAME[] = VALUE;
 #include "Options.inc"
 #undef PREFIX
@@ -43,32 +42,33 @@ static const ::llvm::opt::OptTable::Info optInfo[] = {
    X2,                                                                         \
    X10,                                                                        \
    X11,                                                                        \
-   mull_xctest::libtool::OPT_##ID,                                               \
+   mull_xctest::libtool::OPT_##ID,                                             \
    opt::Option::KIND##Class,                                                   \
    X9,                                                                         \
    X8,                                                                         \
-   mull_xctest::libtool::OPT_##GROUP,                                            \
-   mull_xctest::libtool::OPT_##ALIAS,                                            \
+   mull_xctest::libtool::OPT_##GROUP,                                          \
+   mull_xctest::libtool::OPT_##ALIAS,                                          \
    X7,                                                                         \
    X12},
 #include "Options.inc"
 #undef OPTION
 };
 
-} // namespace clang
+} // namespace libtool
 
 class LibtoolOptTable : public llvm::opt::OptTable {
 public:
   LibtoolOptTable() : OptTable(libtool::optInfo) {}
 };
-}
+} // namespace mull_xctest
 
 using namespace llvm::cl;
 
 OptionCategory MullLibtoolCategory("mull-libtool Options");
 
-opt<std::string> Libtool("libtool", desc("libtool program"), value_desc("string"),
-                         Optional, cat(MullLibtoolCategory));
+opt<std::string> Libtool("libtool", desc("libtool program"),
+                         value_desc("string"), Optional,
+                         cat(MullLibtoolCategory));
 
 opt<bool> DebugEnabled("debug",
                        desc("Enables Debug Mode: more logs are printed"),
@@ -96,9 +96,11 @@ list<std::string>
                  desc("File/directory paths to whitelist (supports regex)"),
                  ZeroOrMore, value_desc("regex"), cat(MullLibtoolCategory));
 
-opt<std::string> CoverageInfo(
-    "coverage-info", desc("Path to the coverage info file (LLVM's profdata)"),
-    value_desc("string"), Optional, init(std::string()), cat(MullLibtoolCategory));
+opt<std::string>
+    CoverageInfo("coverage-info",
+                 desc("Path to the coverage info file (LLVM's profdata)"),
+                 value_desc("string"), Optional, init(std::string()),
+                 cat(MullLibtoolCategory));
 
 list<std::string>
     TargetExecutables("target-executable",
@@ -208,7 +210,8 @@ void bootstrapPipelineConfiguration(
 }
 
 void PrintHelpMessage(char *commandName) {
-  llvm::outs() << "USAGE: " << commandName << " [linker options] -Xmull [option] -Xmull [option] ...\n\n";
+  llvm::outs() << "USAGE: " << commandName
+               << " [linker options] -Xmull [option] -Xmull [option] ...\n\n";
   llvm::outs() << "OPTIONS:\n\n";
 
   llvm::StringMap<Option *> opts;
@@ -317,7 +320,6 @@ void libtool(std::vector<std::string> objectFiles,
   diagnostics.debug("Link command: " + command);
 }
 
-
 int main(int argc, char **argv) {
   llvm::cl::HideUnrelatedOptions(MullLibtoolCategory);
 
@@ -331,7 +333,7 @@ int main(int argc, char **argv) {
   if (!validOptions) {
     return 1;
   }
-  
+
   mull_xctest::LibtoolOptTable optTable;
 
   unsigned missingIndex;
@@ -367,16 +369,16 @@ int main(int argc, char **argv) {
   mull::MutatorsFactory factory(diagnostics);
   std::vector<std::string> groups = {
       "swift_comparison", "cxx_arithmetic", "cxx_arithmetic_assignment",
-      "cxx_boundary",   "swift_logical",
+      "cxx_boundary",     "swift_logical",
   };
   mull::MutationsFinder mutationsFinder(factory.mutators(groups),
                                         configuration);
 
   std::vector<llvm::StringRef> targetExecutables(TargetExecutables.begin(),
                                                  TargetExecutables.end());
-  mull_xctest::MutationPipeline pipeline(
-      inputObjects, targetExecutables, filters, mutationsFinder,
-      diagnostics, configuration, pipelineConfig);
+  mull_xctest::MutationPipeline pipeline(inputObjects, targetExecutables,
+                                         filters, mutationsFinder, diagnostics,
+                                         configuration, pipelineConfig);
 
   std::vector<std::string> objectFiles = pipeline.run();
 

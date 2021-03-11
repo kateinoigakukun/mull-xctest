@@ -40,8 +40,8 @@ public:
                    const MutationPipelineConfig &pipelineConfig)
       : inputObjects(inputObjects), targetExecutables(targetExecutables),
         filters(filters), mutationsFinder(mutationsFinder),
-        diagnostics(diagnostics), config(config),
-        singleTask(diagnostics), pipelineConfig(pipelineConfig) {}
+        diagnostics(diagnostics), config(config), singleTask(diagnostics),
+        pipelineConfig(pipelineConfig) {}
   /// @return list of compiled object files
   std::vector<std::string> run();
 
@@ -59,6 +59,5 @@ private:
                      std::vector<mull::MutationPoint *> &mutationPoints);
 };
 } // namespace mull_xctest
-
 
 #endif

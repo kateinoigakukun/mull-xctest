@@ -1,5 +1,6 @@
 #include "LinkerInvocation.h"
 #include "LinkerOptions.h"
+#include "MullXCTest/MutationPipeline.h"
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Option/ArgList.h>
@@ -18,7 +19,6 @@
 #include <mull/Mutators/MutatorsFactory.h>
 #include <mull/Parallelization/TaskExecutor.h>
 #include <mull/Toolchain/Runner.h>
-#include "MullXCTest/MutationPipeline.h"
 #include <string>
 #include <unistd.h>
 #include <vector>
@@ -259,9 +259,9 @@ int main(int argc, char **argv) {
 
   std::vector<llvm::StringRef> targetExecutables(TargetExecutables.begin(),
                                                  TargetExecutables.end());
-  mull_xctest::MutationPipeline pipeline(
-      inputObjects, targetExecutables, filters, mutationsFinder,
-      diagnostics, configuration, pipelineConfig);
+  mull_xctest::MutationPipeline pipeline(inputObjects, targetExecutables,
+                                         filters, mutationsFinder, diagnostics,
+                                         configuration, pipelineConfig);
 
   std::vector<std::string> objectFiles = pipeline.run();
   mull_xctest::link(objectFiles, options, configuration, diagnostics);
