@@ -1,28 +1,10 @@
 #include "LinkerInvocation.h"
-#include "MullXCTest/SwiftSupport/SyntaxMutationFilter.h"
-#include "MullXCTest/SwiftSupport/SyntaxMutationFinder.h"
-#include "MullXCTest/Tasks/EmbedMutantInfoTask.h"
-#include "MullXCTest/Tasks/ExtractEmbeddedFileTask.h"
-#include "MullXCTest/Tasks/LoadBitcodeFromBufferTask.h"
 #include <llvm/Option/ArgList.h>
-#include <llvm/ProfileData/Coverage/CoverageMapping.h>
-#include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FileUtilities.h>
-#include <llvm/Support/Path.h>
-#include <mull/Filters/FunctionFilter.h>
-#include <mull/Filters/MutationFilter.h>
-#include <mull/Mutant.h>
-#include <mull/Mutators/MutatorsFactory.h>
 #include <mull/Parallelization/Parallelization.h>
 #include <mull/Parallelization/TaskExecutor.h>
-#include <mull/Program/Program.h>
 #include <mull/Toolchain/Runner.h>
-#include <mull/Toolchain/Toolchain.h>
-#include <set>
 #include <sstream>
-#include <string>
-#include <unordered_map>
-#include <unordered_set>
 
 using namespace mull_xctest;
 using namespace mull;
