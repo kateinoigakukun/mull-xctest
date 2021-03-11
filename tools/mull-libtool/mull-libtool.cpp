@@ -137,7 +137,7 @@ llvm::Optional<std::string> getLibtoolPath(mull::Diagnostics &diagnositcs) {
   }
   mull::Runner runner(diagnositcs);
   auto result =
-      runner.runProgram("/usr/bin/xcrun", {"-find", "libtool"}, {}, -1, true);
+      runner.runProgram("/usr/bin/xcrun", {"-find", "libtool"}, {}, -1, true, std::nullopt);
   if (result.status != mull::Passed) {
     diagnositcs.error("failed to run xcrun");
     return llvm::None;
@@ -292,7 +292,7 @@ void runLibtool(std::vector<std::string> objectFiles,
   arguments.push_back(filelistPathStr);
 
   mull::ExecutionResult result = runner.runProgram(libtool, arguments, {},
-                                                   -1, true);
+                                                   -1, true, std::nullopt);
   std::stringstream commandStream;
   commandStream << libtool;
   for (std::string &argument : arguments) {

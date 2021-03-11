@@ -107,7 +107,7 @@ llvm::Optional<std::string> getLinkerPath(mull::Diagnostics &diagnositcs) {
   }
   mull::Runner runner(diagnositcs);
   auto result =
-      runner.runProgram("/usr/bin/xcrun", {"-find", "ld"}, {}, 3000, true);
+      runner.runProgram("/usr/bin/xcrun", {"-find", "ld"}, {}, 3000, true, std::nullopt);
   if (result.status != mull::Passed) {
     diagnositcs.error("failed to run xcrun");
     return llvm::None;
