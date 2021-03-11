@@ -131,20 +131,13 @@ static void validateInputFiles(const std::vector<std::string> &inputFiles) {
   }
 }
 
-static void validateConfiguration(const mull::Configuration &configuration,
-                                  mull::Diagnostics &diags) {
-  if (configuration.linker.empty()) {
-    diags.error("No linker specified. Please set --linker option.");
-  }
-}
-
 llvm::Optional<std::string> getLibtoolPath(mull::Diagnostics &diagnositcs) {
   if (!Libtool.empty()) {
     return std::string(Libtool);
   }
   mull::Runner runner(diagnositcs);
   auto result =
-      runner.runProgram("/usr/bin/xcrun", {"-find", "libtool"}, {}, 3000, true);
+      runner.runProgram("/usr/bin/xcrun", {"-find", "libtool"}, {}, -1, true);
   if (result.status != mull::Passed) {
     diagnositcs.error("failed to run xcrun");
     return llvm::None;
@@ -269,10 +262,10 @@ void collectObjectLinkOpts(const llvm::opt::InputArgList &args,
   }
 }
 
-void libtool(std::vector<std::string> objectFiles,
-             llvm::opt::InputArgList &originalArgs,
-             const mull::Configuration &config,
-             mull::Diagnostics &diagnostics) {
+void runLibtool(std::vector<std::string> objectFiles,
+                llvm::opt::InputArgList &originalArgs,
+                const std::string libtool,
+                mull::Diagnostics &diagnostics) {
   mull::Runner runner(diagnostics);
   llvm::opt::ArgStringList rawArgs;
 
@@ -298,10 +291,10 @@ void libtool(std::vector<std::string> objectFiles,
   arguments.push_back("-filelist");
   arguments.push_back(filelistPathStr);
 
-  mull::ExecutionResult result = runner.runProgram(config.linker, arguments, {},
-                                                   config.linkerTimeout, true);
+  mull::ExecutionResult result = runner.runProgram(libtool, arguments, {},
+                                                   -1, true);
   std::stringstream commandStream;
-  commandStream << config.linker;
+  commandStream << libtool;
   for (std::string &argument : arguments) {
     commandStream << ' ' << argument;
   }
@@ -341,8 +334,8 @@ int main(int argc, char **argv) {
   auto parsedArgs = optTable.ParseArgs(libtoolArgs, missingIndex, missingCount);
 
   mull::Diagnostics diagnostics;
-  const auto linker = getLibtoolPath(diagnostics);
-  if (!linker) {
+  const auto libtool = getLibtoolPath(diagnostics);
+  if (!libtool) {
     diagnostics.error("no real libtool found");
   }
 
@@ -362,7 +355,6 @@ int main(int argc, char **argv) {
 
   bootstrapConfiguration(configuration, diagnostics);
 
-  validateConfiguration(configuration, diagnostics);
   bootstrapPipelineConfiguration(pipelineConfig, diagnostics);
 
   bootstrapFilters(filters, diagnostics, filterStorage);
@@ -382,6 +374,6 @@ int main(int argc, char **argv) {
 
   std::vector<std::string> objectFiles = pipeline.run();
 
-  libtool(objectFiles, parsedArgs, configuration, diagnostics);
+  runLibtool(objectFiles, parsedArgs, libtool.getValue(), diagnostics);
   llvm::llvm_shutdown();
 }
