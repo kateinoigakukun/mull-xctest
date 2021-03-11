@@ -35,7 +35,6 @@ opt<bool> DebugEnabled("debug",
                        desc("Enables Debug Mode: more logs are printed"),
                        Optional, init(false));
 
-
 int main(int argc, char **argv) {
   bool validOptions =
       llvm::cl::ParseCommandLineOptions(argc, argv, "", &llvm::errs());

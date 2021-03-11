@@ -222,7 +222,9 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
 std::unique_ptr<Result> XCTestRunInvocation::run() {
   auto mutants = extractMutantInfo();
   if (mutants.empty()) {
-    return std::make_unique<Result>(std::move(mutants), std::vector<std::unique_ptr<MutationResult>> {}, std::vector<MutationPoint *> {});
+    return std::make_unique<Result>(
+        std::move(mutants), std::vector<std::unique_ptr<MutationResult>>{},
+        std::vector<MutationPoint *>{});
   }
 
   Runner runner(diagnostics);

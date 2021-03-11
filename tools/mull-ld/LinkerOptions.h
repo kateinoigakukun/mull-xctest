@@ -44,9 +44,7 @@ public:
                       std::vector<std::string> &output) {
     optTable.appendFilelist(filelist, output);
   }
-  bool hasHelpFlag() {
-    return optTable.hasHelpFlag(args);
-  }
+  bool hasHelpFlag() { return optTable.hasHelpFlag(args); }
 };
 
 class LD64OptTable : public LinkerOptTable {

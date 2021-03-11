@@ -44,7 +44,8 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
     if (mutant->isCovered()) {
       result = runner.runProgram(
           executable, {"xctest", testBundle}, {mutant->getIdentifier()},
-          baseline.runningTime * 10, configuration.captureMutantOutput, std::nullopt);
+          baseline.runningTime * 10, configuration.captureMutantOutput,
+          std::nullopt);
     } else {
       result.status = NotCovered;
     }
@@ -66,8 +67,9 @@ std::unique_ptr<Result> XCTestInvocation::run() {
 
   ExecutionResult baseline;
   singleTask.execute("Baseline run", [&]() {
-    baseline = runner.runProgram(xcrun, {xctest, testBundle.str()}, {},
-                                 config.timeout, config.captureMutantOutput, std::nullopt);
+    baseline =
+        runner.runProgram(xcrun, {xctest, testBundle.str()}, {}, config.timeout,
+                          config.captureMutantOutput, std::nullopt);
   });
 
   std::vector<std::unique_ptr<MutationResult>> mutationResults;

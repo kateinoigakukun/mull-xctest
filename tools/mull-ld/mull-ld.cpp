@@ -13,17 +13,17 @@
 #include <mull/Filters/FilePathFilter.h>
 #include <mull/Filters/Filter.h>
 #include <mull/Filters/Filters.h>
+#include <mull/Filters/GitDiffFilter.h>
 #include <mull/Filters/JunkMutationFilter.h>
 #include <mull/Filters/NoDebugInfoFilter.h>
-#include <mull/Filters/GitDiffFilter.h>
 #include <mull/MutationsFinder.h>
 #include <mull/Mutators/MutatorsFactory.h>
 #include <mull/Parallelization/TaskExecutor.h>
 #include <mull/Toolchain/Runner.h>
+#include <sstream>
 #include <string>
 #include <unistd.h>
 #include <vector>
-#include <sstream>
 
 using namespace llvm::cl;
 
@@ -72,17 +72,15 @@ list<std::string>
                       desc("Executable file path to collect coverage info"),
                       ZeroOrMore, value_desc("path"), cat(MullLDCategory));
 
-opt<std::string> GitDiffRef("git-diff-ref",
-                            desc("Git branch to run diff against (enables incremental testing)"),
-                            Optional,
-                            value_desc("git commit"),
-                            cat(MullLDCategory));
+opt<std::string> GitDiffRef(
+    "git-diff-ref",
+    desc("Git branch to run diff against (enables incremental testing)"),
+    Optional, value_desc("git commit"), cat(MullLDCategory));
 
-opt<std::string> GitProjectRoot("git-project-root",
-                                desc("Path to project's Git root (used together with -git-diff-ref)"),
-                                Optional,
-                                value_desc("git project root"),
-                                cat(MullLDCategory));
+opt<std::string> GitProjectRoot(
+    "git-project-root",
+    desc("Path to project's Git root (used together with -git-diff-ref)"),
+    Optional, value_desc("git project root"), cat(MullLDCategory));
 
 void filterMullOptions(const llvm::ArrayRef<const char *> &args,
                        std::vector<const char *> &mullArgs,
@@ -120,8 +118,8 @@ llvm::Optional<std::string> getLinkerPath(mull::Diagnostics &diagnositcs) {
     return std::string(Linker);
   }
   mull::Runner runner(diagnositcs);
-  auto result =
-      runner.runProgram("/usr/bin/xcrun", {"-find", "ld"}, {}, 3000, true, std::nullopt);
+  auto result = runner.runProgram("/usr/bin/xcrun", {"-find", "ld"}, {}, 3000,
+                                  true, std::nullopt);
   if (result.status != mull::Passed) {
     diagnositcs.error("failed to run xcrun");
     return llvm::None;
@@ -158,24 +156,28 @@ void bootstrapFilters(
   if (!GitDiffRef.getValue().empty()) {
     if (GitProjectRoot.getValue().empty()) {
       std::stringstream debugMessage;
-      debugMessage
-          << "-git-diff-ref option has been provided but the path to the Git project root has not "
-             "been specified via -git-project-root. The incremental testing will be disabled.";
+      debugMessage << "-git-diff-ref option has been provided but the path to "
+                      "the Git project root has not "
+                      "been specified via -git-project-root. The incremental "
+                      "testing will be disabled.";
       diagnostics.warning(debugMessage.str());
     } else if (!llvm::sys::fs::is_directory(GitProjectRoot.getValue())) {
       std::stringstream debugMessage;
-      debugMessage << "directory provided by -git-project-root does not exist, ";
+      debugMessage
+          << "directory provided by -git-project-root does not exist, ";
       debugMessage << "the incremental testing will be disabled: ";
       debugMessage << GitProjectRoot.getValue();
       diagnostics.warning(debugMessage.str());
     } else {
       std::string gitProjectRoot = GitProjectRoot.getValue();
       std::string gitDiffBranch = GitDiffRef.getValue();
-      diagnostics.info(std::string("Incremental testing using Git Diff is enabled.\n")
-                       + "- Git ref: " + gitDiffBranch + "\n"
-                       + "- Git project root: " + gitProjectRoot);
+      diagnostics.info(
+          std::string("Incremental testing using Git Diff is enabled.\n") +
+          "- Git ref: " + gitDiffBranch + "\n" +
+          "- Git project root: " + gitProjectRoot);
       mull::GitDiffFilter *gitDiffFilter =
-          mull::GitDiffFilter::createFromGitDiff(diagnostics, gitProjectRoot, gitDiffBranch);
+          mull::GitDiffFilter::createFromGitDiff(diagnostics, gitProjectRoot,
+                                                 gitDiffBranch);
 
       if (gitDiffFilter) {
         filterStorage.emplace_back(gitDiffFilter);
@@ -221,7 +223,8 @@ void bootstrapPipelineConfiguration(
 }
 
 void PrintHelpMessage(char *commandName) {
-  llvm::outs() << "USAGE: " << commandName << " [linker options] -Xmull [option] -Xmull [option] ...\n\n";
+  llvm::outs() << "USAGE: " << commandName
+               << " [linker options] -Xmull [option] -Xmull [option] ...\n\n";
   llvm::outs() << "OPTIONS:\n\n";
 
   llvm::StringMap<Option *> opts;
@@ -295,7 +298,7 @@ int main(int argc, char **argv) {
   mull::MutatorsFactory factory(diagnostics);
   std::vector<std::string> groups = {
       "swift_comparison", "cxx_arithmetic", "cxx_arithmetic_assignment",
-      "cxx_boundary",   "swift_logical",
+      "cxx_boundary",     "swift_logical",
   };
   mull::MutationsFinder mutationsFinder(factory.mutators(groups),
                                         configuration);

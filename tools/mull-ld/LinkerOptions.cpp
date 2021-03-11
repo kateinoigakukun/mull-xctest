@@ -89,7 +89,6 @@ void LD64OptTable::appendFilelist(const std::string filelist,
   output.push_back(filelist);
 }
 
-
 bool LD64OptTable::hasHelpFlag(const llvm::opt::InputArgList &args) {
   return args.hasArg(ld64::OPT_help);
 }

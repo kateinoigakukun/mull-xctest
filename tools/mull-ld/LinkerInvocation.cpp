@@ -36,8 +36,8 @@ void mull_xctest::link(std::vector<std::string> objectFiles,
   std::string filelistPathStr(filelistPath);
   linkerOpts.appendFilelist(filelistPathStr, arguments);
 
-  ExecutionResult result = runner.runProgram(config.linker, arguments, {},
-                                             config.linkerTimeout, true, std::nullopt);
+  ExecutionResult result = runner.runProgram(
+      config.linker, arguments, {}, config.linkerTimeout, true, std::nullopt);
   std::stringstream commandStream;
   commandStream << config.linker;
   for (std::string &argument : arguments) {
