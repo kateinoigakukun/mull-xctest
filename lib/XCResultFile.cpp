@@ -123,10 +123,6 @@ execCommand(llvm::StringRef exec, llvm::ArrayRef<llvm::StringRef> Argv) {
 }
 } // namespace
 
-void dumpString(llvm::Optional<std::string> content) {
-  llvm::dbgs() << content << "\n";
-}
-
 llvm::Expected<std::set<std::string>> XCResultFile::getFailureTestTargets() {
   auto jsonOutput =
       execCommand("/usr/bin/xcrun", {"/usr/bin/xcrun", "xcresulttool", "get",
