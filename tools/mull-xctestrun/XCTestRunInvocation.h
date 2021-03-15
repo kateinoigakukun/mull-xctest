@@ -39,7 +39,8 @@ public:
   std::unique_ptr<mull::Result> run();
 
 private:
-  std::vector<std::unique_ptr<mull::Mutant>> extractMutantInfo();
+  std::vector<std::unique_ptr<mull::Mutant>>
+  extractMutantInfo(std::vector<std::pair<std::string, mull::Mutant *>> &);
 };
 } // namespace mull_xctest
 
