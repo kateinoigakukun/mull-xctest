@@ -235,11 +235,11 @@ std::unique_ptr<Result> XCTestRunInvocation::run() {
 
   Runner runner(diagnostics);
 
-  std::string singleTargetRunFile =
-      runConfig.xctestrunFile.str() + ".mull-xctrn-base.xctestrun";
+  std::string baselineRunFile = runConfig.xctestrunFile.str();
   if (!runConfig.testTarget.empty()) {
+    baselineRunFile = runConfig.xctestrunFile.str() + ".mull-xctrn-base.xctestrun";
     GenerateSingleTargetXCRunFile(runConfig.xctestrunFile.str(),
-                                  singleTargetRunFile, runConfig.testTarget);
+                                  baselineRunFile, runConfig.testTarget);
   }
 
   ExecutionResult baseline;
@@ -248,7 +248,7 @@ std::unique_ptr<Result> XCTestRunInvocation::run() {
     if (!logPath.empty())
       llvm::sys::path::append(logPath, "baseline.log");
 
-    baseline = RunXcodeBuildTest(diagnostics, singleTargetRunFile, llvm::None,
+    baseline = RunXcodeBuildTest(diagnostics, baselineRunFile, llvm::None,
                                  runConfig.xcodebuildArgs, {}, config.timeout,
                                  logPath.str().str());
   });
@@ -257,7 +257,7 @@ std::unique_ptr<Result> XCTestRunInvocation::run() {
   std::vector<MutantExecutionTask> tasks;
   tasks.reserve(config.parallelization.mutantExecutionWorkers);
   for (int i = 0; i < config.parallelization.mutantExecutionWorkers; i++) {
-    tasks.emplace_back(i, config, diagnostics, singleTargetRunFile, runConfig,
+    tasks.emplace_back(i, config, diagnostics, baselineRunFile, runConfig,
                        baseline);
   }
   TaskExecutor<MutantExecutionTask> mutantRunner(diagnostics, "Running mutants",
@@ -272,9 +272,10 @@ std::unique_ptr<Result> XCTestRunInvocation::run() {
 }
 
 std::vector<std::unique_ptr<mull::Mutant>>
-XCTestRunInvocation::extractMutantInfo(std::vector<std::pair<std::string, Mutant *>> &mutantsByTarget) {
+XCTestRunInvocation::extractMutantInfo(std::vector<std::pair<std::string, Mutant *>> &mutantTargetPairs) {
   XCTestRunFile file(runConfig.xctestrunFile.str());
   std::vector<std::unique_ptr<mull::Mutant>> mutantsOwner;
+  std::set<std::string> recordedBinaryPaths;
 
   auto recordTargetMutants = [&] (std::string target) {
     auto products = file.getDependentProductPaths(target);
@@ -285,6 +286,9 @@ XCTestRunInvocation::extractMutantInfo(std::vector<std::pair<std::string, Mutant
 
     for (auto product : *products) {
       auto binaryPath = GetBundleBinaryPath(product);
+      if (!recordedBinaryPaths.insert(binaryPath).second) {
+        continue;
+      }
       auto result = ExtractMutantInfo(binaryPath, factory, allPoints);
       if (!result) {
         continue;
@@ -292,7 +296,7 @@ XCTestRunInvocation::extractMutantInfo(std::vector<std::pair<std::string, Mutant
       auto start = mutantsOwner.size();
       std::move(result->begin(), result->end(), std::back_inserter(mutantsOwner));
       for (auto i = start, e = mutantsOwner.size(); i < e; i++) {
-        mutantsByTarget.emplace_back(target, mutantsOwner.at(i).get());
+        mutantTargetPairs.emplace_back(target, mutantsOwner.at(i).get());
       }
     }
   };

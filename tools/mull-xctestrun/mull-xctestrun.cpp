@@ -15,7 +15,7 @@ list<std::string> XcodeBuildArgs("Xxcodebuild",
                                  desc("Pass <arg> to the xcodebuild"),
                                  ZeroOrMore, value_desc("arg"));
 
-opt<std::string> TestTarget("test-target", desc("test target name"), Required,
+opt<std::string> TestTarget("test-target", desc("test target name"), Optional,
                             value_desc("name"));
 
 opt<std::string> ResultBundleDir("result-bundle-dir",
