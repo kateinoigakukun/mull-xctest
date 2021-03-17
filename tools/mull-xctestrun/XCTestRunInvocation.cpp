@@ -195,9 +195,10 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
   if (!logPath.empty())
     llvm::sys::path::append(logPath, std::to_string(taskID) + ".log");
 
+  int count = std::distance(begin, end);
   result = RunXcodeBuildTest(diagnostics, localRunFile, resultBundlePath,
                              runConfig.xcodebuildArgs, {},
-                             baseline.runningTime * 10, logPath.str().str());
+                             baseline.runningTime * count * 10, logPath.str().str());
   XCResultFile resultFile(resultBundlePath);
   auto failureTargets = resultFile.getFailureTestTargets();
   if (!failureTargets) {
