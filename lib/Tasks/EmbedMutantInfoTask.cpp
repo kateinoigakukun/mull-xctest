@@ -73,7 +73,8 @@ static void embedMutantInfo(Bitcode &bitcode) {
   for (auto pair : bitcode.getMutationPointsMap()) {
     for (auto point : pair.second) {
       if (entries.insert(point->getUserIdentifier()).second) {
-        serializer.serialize(point);
+        // TODO
+//        serializer.serialize(point);
       }
     }
   }

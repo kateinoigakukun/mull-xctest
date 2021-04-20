@@ -26,19 +26,17 @@ void MutantSerializer::serializeMetadata() {
   writeString(magic);
   writeInt(version);
 }
-void MutantSerializer::serialize(mull::MutationPoint *point) {
-  writeString(point->getMutator()->getUniqueIdentifier());
+void MutantSerializer::serialize(mull::Mutant *mutant) {
+  writeString(mutant->getIdentifier());
+  writeString(mutant->getMutatorIdentifier());
 
-  const auto &loc = point->getSourceLocation();
+  const auto &loc = mutant->getSourceLocation();
   writeString(loc.directory);
   writeString(loc.filePath);
   writeString(loc.unitDirectory);
   writeString(loc.unitFilePath);
   writeInt(loc.line);
   writeInt(loc.column);
-
-  writeString(point->getReplacement());
-  writeString(point->getDiagnostics());
 }
 
 uint8_t MutantDeserializer::readByte() {
@@ -68,7 +66,8 @@ bool MutantDeserializer::consumeMetadata() {
   return !(readMagic == magic && readVersion == version);
 }
 
-std::unique_ptr<mull::MutationPoint> MutantDeserializer::deserialize() {
+std::unique_ptr<mull::Mutant> MutantDeserializer::deserialize() {
+  auto identifier = readString();
   auto mutatorID = readString();
   auto &mapping = factory.getMutatorsMapping();
   auto mutatorEntry = mapping.find(mutatorID);
@@ -84,16 +83,12 @@ std::unique_ptr<mull::MutationPoint> MutantDeserializer::deserialize() {
   int column = readInt();
   mull::SourceLocation loc(unitDirectory, unitFilePath, directory, filePath,
                            line, column);
-  auto replacement = readString();
-  auto diagnostics = readString();
 
-  return std::make_unique<mull::MutationPoint>(mutator, replacement, loc,
-                                               diagnostics);
+  return std::make_unique<mull::Mutant>(identifier, mutatorID, loc, true);
 }
 
 llvm::Expected<MutantList> mull_xctest::ExtractMutantInfo(
-    std::string binaryPath, mull::MutatorsFactory &factory,
-    std::vector<std::unique_ptr<mull::MutationPoint>> &pointsOwner) {
+    std::string binaryPath, mull::MutatorsFactory &factory) {
 
   using namespace llvm;
   auto binaryOrErr = object::createBinary(binaryPath);
@@ -124,18 +119,14 @@ llvm::Expected<MutantList> mull_xctest::ExtractMutantInfo(
 
   std::vector<std::unique_ptr<mull::Mutant>> mutants;
   while (!deserializer.isEOF()) {
-    std::unique_ptr<mull::MutationPoint> point = deserializer.deserialize();
-    if (!point) {
+    std::unique_ptr<mull::Mutant> mutant = deserializer.deserialize();
+    if (!mutant) {
       return llvm::make_error<StringError>(
           Twine("failed to deserialize mutants."),
           llvm::inconvertibleErrorCode());
     }
 
-    std::string id = point->getUserIdentifier();
-    pointsOwner.push_back(std::move(point));
-    std::vector<mull::MutationPoint *> points;
-    points.push_back(pointsOwner.back().get());
-    mutants.push_back(std::make_unique<mull::Mutant>(id, points));
+    mutants.push_back(std::move(mutant));
   }
   return std::move(mutants);
 }

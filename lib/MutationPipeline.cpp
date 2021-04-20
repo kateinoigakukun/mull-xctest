@@ -79,6 +79,10 @@ std::vector<std::string> MutationPipeline::run() {
   }
 
   auto filteredMutations = filterMutations(std::move(mutationPoints));
+  if (filteredMutations.empty()) {
+    return inputObjects;
+  }
+
   std::vector<std::unique_ptr<Mutant>> mutants;
   singleTask.execute("Deduplicate mutants", [&]() {
     std::unordered_map<std::string, std::vector<MutationPoint *>> mapping;
@@ -86,14 +90,22 @@ std::vector<std::string> MutationPipeline::run() {
       mapping[point->getUserIdentifier()].push_back(point);
     }
     for (auto &pair : mapping) {
-      mutants.push_back(std::make_unique<Mutant>(pair.first, pair.second));
+      std::string identifier = pair.first;
+      MutationPoint *anyPoint = pair.second.front();
+      std::string mutatorIdentifier = anyPoint->getMutatorIdentifier();
+      const SourceLocation &sourceLocation = anyPoint->getSourceLocation();
+      bool covered = false;
+      for (MutationPoint *point : pair.second) {
+        if (point->isCovered()) {
+          covered = true;
+          break;
+        }
+      }
+      mutants.push_back(std::make_unique<Mutant>(identifier, mutatorIdentifier,
+                                                 sourceLocation, covered));
     }
     std::sort(std::begin(mutants), std::end(mutants), MutantComparator());
   });
-
-  if (filteredMutations.empty()) {
-    return inputObjects;
-  }
 
   // Step 4. Apply mutations
   applyMutation(program, filteredMutations);

@@ -224,8 +224,7 @@ std::unique_ptr<Result> XCTestRunInvocation::run() {
   auto mutants = extractMutantInfo();
   if (mutants.empty()) {
     return std::make_unique<Result>(
-        std::move(mutants), std::vector<std::unique_ptr<MutationResult>>{},
-        std::vector<MutationPoint *>{});
+        std::move(mutants), std::vector<std::unique_ptr<MutationResult>>{});
   }
 
   Runner runner(diagnostics);
@@ -258,10 +257,8 @@ std::unique_ptr<Result> XCTestRunInvocation::run() {
                                                  std::move(tasks));
   mutantRunner.execute();
 
-  std::vector<MutationPoint *> filteredMutations{};
-
   return std::make_unique<Result>(
-      std::move(mutants), std::move(mutationResults), filteredMutations);
+      std::move(mutants), std::move(mutationResults));
 }
 
 std::vector<std::unique_ptr<mull::Mutant>>
@@ -276,7 +273,7 @@ XCTestRunInvocation::extractMutantInfo() {
   std::vector<std::unique_ptr<mull::Mutant>> output;
   for (auto product : *products) {
     auto binaryPath = GetBundleBinaryPath(product);
-    auto result = ExtractMutantInfo(binaryPath, factory, allPoints);
+    auto result = ExtractMutantInfo(binaryPath, factory);
     if (!result) {
       continue;
     }

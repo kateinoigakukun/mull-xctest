@@ -12,8 +12,7 @@ namespace mull_xctest {
 using MutantList = std::vector<std::unique_ptr<mull::Mutant>>;
 
 llvm::Expected<MutantList> ExtractMutantInfo(
-    std::string binaryPath, mull::MutatorsFactory &factory,
-    std::vector<std::unique_ptr<mull::MutationPoint>> &pointsOwner);
+    std::string binaryPath, mull::MutatorsFactory &factory);
 
 class MutantSerializer {
   llvm::raw_ostream &output;
@@ -23,7 +22,7 @@ class MutantSerializer {
 public:
   MutantSerializer(llvm::raw_ostream &output) : output(output) {}
   void serializeMetadata();
-  void serialize(mull::MutationPoint *point);
+  void serialize(mull::Mutant *point);
 };
 
 class MutantDeserializer {
@@ -42,7 +41,7 @@ public:
 
   /// \returns true if an error occurred.
   bool consumeMetadata();
-  std::unique_ptr<mull::MutationPoint> deserialize();
+  std::unique_ptr<mull::Mutant> deserialize();
 };
 
 } // namespace mull_xctest
