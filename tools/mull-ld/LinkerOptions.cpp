@@ -54,11 +54,17 @@ static bool readFilelistFile(llvm::StringRef filepath,
 
 void LD64OptTable::collectObjectFiles(const llvm::opt::InputArgList &args,
                                       std::vector<std::string> &objectFiles) {
-  for (auto input : args.filtered(ld64::OPT_INPUT)) {
-    objectFiles.push_back(input->getValue());
-  }
-  for (auto arg : args.filtered(ld64::OPT_filelist)) {
-    readFilelistFile(arg->getValue(), objectFiles);
+  for (auto it = args.begin(); it != args.end(); ++it) {
+    auto arg = *it;
+    // workaround: add_ast_path is not supported in lld
+    // but it takes a value, so skip it
+    if (arg->getOption().matches(ld64::OPT_add_ast_path)) {
+      ++it;
+    } else if (arg->getOption().matches(ld64::OPT_INPUT)) {
+      objectFiles.push_back(arg->getValue());
+    } else if (arg->getOption().matches(ld64::OPT_filelist)) {
+      readFilelistFile(arg->getValue(), objectFiles);
+    }
   }
 }
 
