@@ -32,16 +32,17 @@ TEST(MutantSerializationTest, singlePoint) {
 
   cxx::AddToSub mutator;
   SourceLocation loc("unit_dir", "unit_file_path", "dir", "file_path", 1, 2);
-  MutationPoint point(&mutator, "replacement", loc, "diagnostics");
+  std::string userIdentifier = mutator.getUniqueIdentifier() + ':' + loc.filePath + ':' +
+                               std::to_string(loc.line) + ':' + std::to_string(loc.column);
+  Mutant mutant(userIdentifier, mutator.getUniqueIdentifier(), loc, true);
   std::string entriesString;
   raw_string_ostream stream(entriesString);
   MutantSerializer serializer(stream);
-  serializer.serialize(&point);
+  serializer.serialize(&mutant);
 
   MutantDeserializer deserializer(StringRef(entriesString), factory);
   auto restored = deserializer.deserialize();
 
-  ASSERT_EQ(point.getMutator()->mutatorKind(),
-            restored->getMutator()->mutatorKind());
-  ASSERT_EQ(point.getUserIdentifier(), restored->getUserIdentifier());
+  ASSERT_EQ(mutant.getMutatorIdentifier(), restored->getMutatorIdentifier());
+  ASSERT_EQ(mutant.getIdentifier(), restored->getIdentifier());
 }
