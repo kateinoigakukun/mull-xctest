@@ -3,10 +3,13 @@ import SwiftSyntax
 enum SyntaxMutatorKind: Int {
     // FIXME: These cases are copied from mull::MutationKind.
     // Use more extensible way
-    case NegateMutator,
-    RemoveVoidFunctionMutator,
-    ReplaceCallMutator,
+    case InvalidKind,
+
+    NegateMutator,
     ScalarValueMutator,
+
+    CXX_RemoveVoidCall,
+    CXX_ReplaceScalarCall,
 
     CXX_AddToSub,
     CXX_AddAssignToSubAssign,
