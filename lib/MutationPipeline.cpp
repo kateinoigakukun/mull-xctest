@@ -1,7 +1,7 @@
 #include "MullXCTest/MutationPipeline.h"
 #include "MullXCTest/SwiftSupport/SyntaxMutationFilter.h"
 #include "MullXCTest/SwiftSupport/SyntaxMutationFinder.h"
-#include "MullXCTest/Tasks/EmbedMutantInfoTask.h"
+#include "MullXCTest/MutantMetadata.h"
 #include "MullXCTest/Tasks/ExtractEmbeddedFileTask.h"
 #include "MullXCTest/Tasks/LoadBitcodeFromBufferTask.h"
 #include <llvm/Option/ArgList.h>
@@ -126,6 +126,18 @@ std::vector<std::string> MutationPipeline::run() {
       diagnostics, "Compiling original code", program.bitcode(), objectFiles,
       std::move(compilationTasks));
   mutantCompiler.execute();
+
+  // Step 6. Create metadata object file
+  llvm::LLVMContext metadataCtx;
+  std::unique_ptr<llvm::Module> metadataModule = CreateMetadataModule(mutants, metadataCtx);
+  const std::string &targetTriple = program.bitcode().front()->getModule()->getTargetTriple();
+  metadataModule->setTargetTriple(targetTriple);
+  mull::Bitcode metadataBitcode(std::move(metadataModule));
+  const std::string metadataObj = toolchain.compiler().compileBitcode(metadataBitcode);
+  if (!metadataObj.empty()) {
+    objectFiles.push_back(metadataObj);
+  }
+
   return std::move(objectFiles);
 }
 
@@ -312,10 +324,6 @@ void MutationPipeline::applyMutation(
   auto workers = config.parallelization.workers;
 
   std::vector<int> Nothing;
-  TaskExecutor<EmbedMutantInfoTask> embedMutantInfo(
-      diagnostics, "Embedding mutation information", program.bitcode(), Nothing,
-      std::vector<EmbedMutantInfoTask>(workers));
-  embedMutantInfo.execute();
 
   TaskExecutor<CloneMutatedFunctionsTask> cloneFunctions(
       diagnostics, "Cloning functions for mutation", program.bitcode(), Nothing,
