@@ -20,8 +20,6 @@ class XCTestInvocation {
   const mull::Configuration &config;
   mull::SingleTaskExecutor singleTask;
 
-  std::vector<std::unique_ptr<mull::MutationPoint>> allPoints;
-
 public:
   XCTestInvocation(llvm::StringRef testBundle, mull::MutatorsFactory &factory,
                    mull::Diagnostics &diagnostics,

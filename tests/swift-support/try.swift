@@ -1,8 +1,8 @@
 // RUN: %empty-directory(%t)
 // RUN: swiftc %s -tools-directory %mull-xctest-bin -embed-bitcode -g -o %t/try.swift.out -sdk %target-sdk
 // no mutation
-// RUN: not mull-dump-mutants %t/try.swift.out
-
+// RUN: mull-dump-mutants %t/try.swift.out | FileCheck %s
+// CHECK: no mutant info found
 // CHECK-NOT: cxx_eq_to_ne /<compiler-generated>:0:0
 
 struct MyError: Error {}

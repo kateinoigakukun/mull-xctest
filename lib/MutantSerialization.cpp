@@ -5,6 +5,7 @@
 #include <llvm/Support/Endian.h>
 #include <mull/MutationPoint.h>
 #include <mull/Mutators/Mutator.h>
+#include "MutantExtractor.h"
 
 #include <sstream>
 
@@ -88,45 +89,8 @@ std::unique_ptr<mull::Mutant> MutantDeserializer::deserialize() {
 }
 
 llvm::Expected<MutantList> mull_xctest::ExtractMutantInfo(
-    std::string binaryPath, mull::MutatorsFactory &factory) {
-
-  using namespace llvm;
-  auto binaryOrErr = object::createBinary(binaryPath);
-  if (!binaryOrErr) {
-    return binaryOrErr.takeError();
-  }
-  const auto *machOObjectFile =
-      dyn_cast<object::MachOObjectFile>(binaryOrErr->getBinary());
-  if (!machOObjectFile) {
-    return llvm::make_error<StringError>(
-        Twine("input file is not mach-o object file"),
-        llvm::inconvertibleErrorCode());
-  }
-  Expected<object::SectionRef> section =
-      machOObjectFile->getSection(MULL_MUTANTS_INFO_SECTION_NAME_STR);
-  if (!section) {
-    return llvm::make_error<StringError>(
-        Twine("failed to get mutants info section: ") +
-            llvm::toString(section.takeError()),
-        llvm::inconvertibleErrorCode());
-  }
-
-  Expected<StringRef> contentsData = section->getContents();
-  if (!contentsData) {
-    return contentsData.takeError();
-  }
-  MutantDeserializer deserializer(contentsData.get(), factory);
-
-  std::vector<std::unique_ptr<mull::Mutant>> mutants;
-  while (!deserializer.isEOF()) {
-    std::unique_ptr<mull::Mutant> mutant = deserializer.deserialize();
-    if (!mutant) {
-      return llvm::make_error<StringError>(
-          Twine("failed to deserialize mutants."),
-          llvm::inconvertibleErrorCode());
-    }
-
-    mutants.push_back(std::move(mutant));
-  }
-  return std::move(mutants);
+    std::string binaryPath, mull::MutatorsFactory &factory,
+    mull::Diagnostics &diags) {
+  mull::MutantExtractor extractor(diags);
+  return std::move(extractor.extractMutants(binaryPath));
 }

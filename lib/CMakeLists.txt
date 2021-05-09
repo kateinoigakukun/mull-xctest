@@ -6,6 +6,8 @@ set(mullXCTest_sources
     XCTestRunFile.cpp
     XCResultFile.cpp
     MutationPipeline.cpp
+    # FIXME: Move MutantExtractor to mull core library
+    MutantExtractor.cpp
 )
 set(mullXCTest_headers
     ${MULL_XCTEST_INCLUDE_DIR}/Tasks/ExtractEmbeddedFileTask.h
@@ -16,6 +18,7 @@ set(mullXCTest_headers
     ${MULL_XCTEST_INCLUDE_DIR}/XCTestRunFile.h
     ${MULL_XCTEST_INCLUDE_DIR}/XCResultFile.h
     ${MULL_XCTEST_INCLUDE_DIR}/MutationPipeline.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/MutantExtractor.h
 )
 
 add_library(mullXCTest STATIC

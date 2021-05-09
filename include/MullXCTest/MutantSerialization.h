@@ -12,7 +12,7 @@ namespace mull_xctest {
 using MutantList = std::vector<std::unique_ptr<mull::Mutant>>;
 
 llvm::Expected<MutantList> ExtractMutantInfo(
-    std::string binaryPath, mull::MutatorsFactory &factory);
+    std::string binaryPath, mull::MutatorsFactory &factory, mull::Diagnostics &);
 
 class MutantSerializer {
   llvm::raw_ostream &output;

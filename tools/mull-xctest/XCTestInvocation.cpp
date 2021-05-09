@@ -83,10 +83,8 @@ std::unique_ptr<Result> XCTestInvocation::run() {
                                                  std::move(tasks));
   mutantRunner.execute();
 
-  std::vector<MutationPoint *> filteredMutations{};
-
   return std::make_unique<Result>(
-      std::move(mutants), std::move(mutationResults), filteredMutations);
+      std::move(mutants), std::move(mutationResults));
 }
 
 MutantList XCTestInvocation::extractMutantInfo() {
@@ -96,7 +94,7 @@ MutantList XCTestInvocation::extractMutantInfo() {
   SmallString<64> binaryPath(testBundle);
   llvm::sys::path::append(binaryPath, "Contents", "MacOS", basename);
 
-  auto result = ExtractMutantInfo(binaryPath.str().str(), factory, allPoints);
+  auto result = ExtractMutantInfo(binaryPath.str().str(), factory, diagnostics);
   if (!result) {
     llvm::consumeError(result.takeError());
     return {};

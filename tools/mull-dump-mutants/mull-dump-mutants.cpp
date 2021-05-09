@@ -16,6 +16,15 @@ using namespace llvm;
 using namespace mull;
 using namespace mull_xctest;
 
+static std::string dumpMutant(mull::Mutant &mutant) {
+  std::stringstream ss;
+  ss << "Mutation Point: " << mutant.getMutatorIdentifier() << " "
+     << mutant.getSourceLocation().filePath << ":" << mutant.getSourceLocation().line << ":"
+     << mutant.getSourceLocation().column;
+  return ss.str();
+}
+
+
 opt<std::string> InputFile(Positional, desc("<input file>"), Required,
                            value_desc("path"));
 
@@ -28,9 +37,8 @@ int main(int argc, char **argv) {
 
   mull::Diagnostics diagnostics;
   mull::MutatorsFactory factory(diagnostics);
-  std::vector<std::unique_ptr<mull::MutationPoint>> pointsOwner;
   factory.init();
-  auto result = ExtractMutantInfo(InputFile, factory, pointsOwner);
+  auto result = ExtractMutantInfo(InputFile, factory, diagnostics);
   if (!result) {
     diagnostics.error(llvm::toString(result.takeError()));
   }
@@ -41,7 +49,7 @@ int main(int argc, char **argv) {
   }
 
   for (auto &mutant : *result) {
-    llvm::outs() << mutant->getMutationPoints().front()->dump() << "\n";
+    llvm::outs() << dumpMutant(*mutant) << "\n";
   }
   return 0;
 }

@@ -312,10 +312,10 @@ void MutationPipeline::applyMutation(
   auto workers = config.parallelization.workers;
 
   std::vector<int> Nothing;
-  TaskExecutor<EmbedMutantInfoTask> embedMutantInfo(
-      diagnostics, "Embedding mutation information", program.bitcode(), Nothing,
-      std::vector<EmbedMutantInfoTask>(workers));
-  embedMutantInfo.execute();
+//  TaskExecutor<EmbedMutantInfoTask> embedMutantInfo(
+//      diagnostics, "Embedding mutation information", program.bitcode(), Nothing,
+//      std::vector<EmbedMutantInfoTask>(workers));
+//  embedMutantInfo.execute();
 
   TaskExecutor<CloneMutatedFunctionsTask> cloneFunctions(
       diagnostics, "Cloning functions for mutation", program.bitcode(), Nothing,
