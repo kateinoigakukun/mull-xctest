@@ -1,12 +1,8 @@
+#include "MullXCTest/Tasks/EmbedMutantInfoTask.h"
 #include "MullXCTest/MutantMetadata.h"
 #include "MullXCTest/MutantSerialization.h"
-#include <mull/Diagnostics/Diagnostics.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/ValueHandle.h>
-#include <llvm/IR/Verifier.h>
-#include <llvm/IR/LegacyPassManager.h>
-#include <llvm/Support/TargetRegistry.h>
-#include <llvm/Target/TargetOptions.h>
 #include <mull/MutationPoint.h>
 #include <set>
 
@@ -62,21 +58,25 @@ static void emitGlobalList(Module &module,
   var->setAlignment(llvm::MaybeAlign(alignment));
 }
 
-std::unique_ptr<llvm::Module> CreateMetadataModule(std::vector<std::unique_ptr<Mutant>> &mutants,
-                                                   llvm::LLVMContext &context) {
-  auto module = std::make_unique<llvm::Module>("mull-xctest.metadata", context);
+static void embedMutantInfo(Bitcode &bitcode) {
+  auto *module = bitcode.getModule();
 
-  if (mutants.empty()) {
+  if (bitcode.getMutationPointsMap().empty()) {
     module->appendModuleInlineAsm(".section " MULL_MUTANTS_INFO_SECTION);
-    return std::move(module);
+    return;
   }
 
   std::string entriesString;
   llvm::raw_string_ostream stream(entriesString);
   MutantSerializer serializer(stream);
   std::set<std::string> entries;
-  for (auto &mutant : mutants) {
-    serializer.serialize(mutant.get());
+  for (auto pair : bitcode.getMutationPointsMap()) {
+    for (auto point : pair.second) {
+      if (entries.insert(point->getUserIdentifier()).second) {
+        // TODO
+//        serializer.serialize(point);
+      }
+    }
   }
 
   auto constantContent = llvm::ConstantDataArray::getString(
@@ -93,5 +93,12 @@ std::unique_ptr<llvm::Module> CreateMetadataModule(std::vector<std::unique_ptr<M
   emitGlobalList(*module, LLVMUsed, "llvm.used", "llvm.metadata",
                  llvm::GlobalValue::AppendingLinkage,
                  llvm::Type::getInt8PtrTy(module->getContext()), false);
-  return std::move(module);
+}
+
+void EmbedMutantInfoTask::operator()(iterator begin, iterator end, Out &storage,
+                                     mull::progress_counter &counter) {
+  for (auto it = begin; it != end; it++, counter.increment()) {
+    Bitcode &bitcode = **it;
+    embedMutantInfo(bitcode);
+  }
 }
