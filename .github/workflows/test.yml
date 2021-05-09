@@ -51,7 +51,7 @@ jobs:
       run: |
         set -ex
         export PATH="$PATH:/usr/local/opt/llvm/bin"
-        pip install lit
+        pip3 install lit
         cd build
         ninja mullXCTest-tests
         ninja test
