@@ -155,6 +155,11 @@ class SourceUnitLocationIndexer: SyntaxAnyVisitor {
         storage.save(mutation: [mutation], node: node)
     }
 
+    override func visitPost(_ node: FunctionCallExprSyntax) {
+        let mutation = SyntaxMutatorKind.CXX_RemoveVoidCall
+        storage.save(mutation: [mutation], node: node)
+    }
+
     override func visitPost(_ node: TokenSyntax) {
         guard let parent = node.parent,
               parent.is(BinaryOperatorExprSyntax.self) else { return }
