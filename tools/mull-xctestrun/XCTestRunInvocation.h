@@ -27,8 +27,6 @@ class XCTestRunInvocation {
   const XCTestRunConfig &runConfig;
   mull::SingleTaskExecutor singleTask;
 
-  std::vector<std::unique_ptr<mull::MutationPoint>> allPoints;
-
 public:
   XCTestRunInvocation(mull::MutatorsFactory &factory,
                       mull::Diagnostics &diagnostics,

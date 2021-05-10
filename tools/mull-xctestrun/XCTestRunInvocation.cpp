@@ -1,5 +1,4 @@
 #include "XCTestRunInvocation.h"
-#include "MullXCTest/MutantMetadata.h"
 #include "MullXCTest/MutantSerialization.h"
 #include "MullXCTest/XCResultFile.h"
 #include "MullXCTest/XCTestRunFile.h"

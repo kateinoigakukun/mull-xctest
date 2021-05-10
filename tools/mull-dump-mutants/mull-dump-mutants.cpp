@@ -1,4 +1,3 @@
-#include "MullXCTest/MutantMetadata.h"
 #include "MullXCTest/MutantSerialization.h"
 #include <llvm/Object/Binary.h>
 #include <llvm/Object/MachO.h>

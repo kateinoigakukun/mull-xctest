@@ -1,7 +1,6 @@
 #include "MullXCTest/MutationPipeline.h"
 #include "MullXCTest/SwiftSupport/SyntaxMutationFilter.h"
 #include "MullXCTest/SwiftSupport/SyntaxMutationFinder.h"
-#include "MullXCTest/Tasks/EmbedMutantInfoTask.h"
 #include "MullXCTest/Tasks/ExtractEmbeddedFileTask.h"
 #include "MullXCTest/Tasks/LoadBitcodeFromBufferTask.h"
 #include <llvm/Option/ArgList.h>
@@ -312,10 +311,6 @@ void MutationPipeline::applyMutation(
   auto workers = config.parallelization.workers;
 
   std::vector<int> Nothing;
-//  TaskExecutor<EmbedMutantInfoTask> embedMutantInfo(
-//      diagnostics, "Embedding mutation information", program.bitcode(), Nothing,
-//      std::vector<EmbedMutantInfoTask>(workers));
-//  embedMutantInfo.execute();
 
   TaskExecutor<CloneMutatedFunctionsTask> cloneFunctions(
       diagnostics, "Cloning functions for mutation", program.bitcode(), Nothing,
