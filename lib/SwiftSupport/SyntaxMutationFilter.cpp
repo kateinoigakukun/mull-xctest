@@ -3,6 +3,7 @@
 #include <mull/MutationPoint.h>
 
 #include <cassert>
+#include <sstream>
 
 using namespace mull_xctest::swift;
 
@@ -29,7 +30,11 @@ bool SyntaxMutationFilter::shouldSkip(mull::MutationPoint *point) {
 
   auto sourceLocation =
       mull::SourceLocation::locationFromInstruction(instruction);
-  return !storage.hasMutation(sourceLocation.filePath, sourceLocation.line,
-                              sourceLocation.column,
-                              point->getMutator()->mutatorKind());
+  bool accept = storage.hasMutation(sourceLocation.filePath, sourceLocation.line,
+                                    sourceLocation.column,
+                                    point->getMutator()->mutatorKind());
+  std::stringstream message;
+  message << (accept ? "Accepted " : "Filtered ") << point->dump() << "\n";
+  diagnostics.debug(message.str());
+  return !accept;
 }
