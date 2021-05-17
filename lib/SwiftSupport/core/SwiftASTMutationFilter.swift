@@ -68,7 +68,10 @@ enum SyntaxMutatorKind: Int {
     CXX_RemoveNegation,
 
     Swift_Logical_AndToOr,
-    Swift_Logical_OrToAnd
+    Swift_Logical_OrToAnd,
+
+    Swift_EqualToNotEqual,
+    Swift_NotEqualToEqual
 }
 typealias LineColumnHash = Int
 
@@ -119,8 +122,8 @@ let BINARY_MUTATIONS: [String: Set<SyntaxMutatorKind>] = [
     "/=": [.CXX_DivAssignToMulAssign],
     "%=": [.CXX_RemAssignToDivAssign],
 
-    "==": [.CXX_EqualToNotEqual],
-    "!=": [.CXX_NotEqualToEqual],
+    "==": [.Swift_EqualToNotEqual],
+    "!=": [.Swift_NotEqualToEqual],
 
     "<" : [
         .CXX_LessThanToGreaterOrEqual, // < -> >=

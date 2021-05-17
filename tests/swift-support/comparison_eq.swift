@@ -6,8 +6,20 @@ func equal(_ lhs: Int, _ rhs: Int) -> Bool {
     return lhs == rhs
 }
 
+func equal_bool(_ v1: Bool, _ v2: Bool) -> Bool {
+    return v1 == v2
+}
+
 func not_equal(_ lhs: Int, _ rhs: Int) -> Bool {
     return lhs != rhs
+}
+
+func not_equal_u64(_ v1: UInt64, _ v2: UInt64) -> Bool {
+    return v1 != v2
+}
+
+func not_equal_u32_u64(_ v1: UInt32, _ v2: UInt64) -> Bool {
+    return v1 != v2
 }
 
 // CHECK-DAG: Mutation Point: cxx_eq_to_ne {{.*}}/comparison_eq.swift:6:16
