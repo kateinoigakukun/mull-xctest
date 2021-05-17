@@ -271,6 +271,9 @@ void MutationPipeline::setupSyntaxFilter(
   SyntaxMutationFinder finder;
 
   auto storage = finder.findMutations(sourcePaths, diagnostics, config);
+  if (config.debugEnabled) {
+    storage.dump();
+  }
 
   auto *syntaxFilter =
       new SyntaxMutationFilter(diagnostics, std::move(storage));

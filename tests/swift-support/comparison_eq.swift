@@ -18,21 +18,30 @@ func not_equal_u64(_ v1: UInt64, _ v2: UInt64) -> Bool {
     return v1 != v2
 }
 
+// TODO
 func not_equal_u32_u64(_ v1: UInt32, _ v2: UInt64) -> Bool {
     return v1 != v2
 }
 
-// CHECK-DAG: Mutation Point: cxx_eq_to_ne {{.*}}/comparison_eq.swift:6:16
-// CHECK-DAG: Mutation Point: cxx_ne_to_eq {{.*}}/comparison_eq.swift:10:16
+// CHECK-DAG: Mutation Point: swift_eq_to_ne {{.*}}/comparison_eq.swift:6:16
+// CHECK-DAG: Mutation Point: swift_eq_to_ne {{.*}}/comparison_eq.swift:10:15
+// CHECK-DAG: Mutation Point: swift_ne_to_eq {{.*}}/comparison_eq.swift:14:16
+// CHECK-DAG: Mutation Point: swift_ne_to_eq {{.*}}/comparison_eq.swift:18:15
 
-// // FAIL-RUN: env TEST_cxx_eq_to_ne=1 "cxx_eq_to_ne:%s:6:16"=1 %t/comp.swift.out
-// if getenv("TEST_cxx_eq_to_ne") != nil {
-//     assert(equal(1, 1) == false)
-//     assert(equal(1, 2) == true)
-// }
-// 
-// // FAIL-RUN: env TEST_cxx_ne_to_eq=1 "cxx_ne_to_eq:%s:10:16"=1 %t/comp.swift.out
-// if getenv("TEST_cxx_ne_to_eq") != nil {
-//     assert(not_equal(1, 1) == true)
-//     assert(not_equal(1, 2) == false)
-// }
+import Darwin
+
+// RUN: env TEST_swift_eq_to_ne=1 "swift_eq_to_ne:%s:6:16"=1 "swift_eq_to_ne:%s:10:15"=1 %t/comp.swift.out
+if getenv("TEST_swift_eq_to_ne") != nil {
+    assert(equal(1, 1) == false)
+    assert(equal(1, 2) == true)
+    assert(equal_bool(true, false) == true)
+    assert(equal_bool(true, true) == false)
+}
+
+// RUN: env TEST_swift_ne_to_eq=1 "swift_ne_to_eq:%s:14:16"=1 "swift_ne_to_eq:%s:18:15"=1 %t/comp.swift.out
+if getenv("TEST_swift_ne_to_eq") != nil {
+    assert(not_equal(1, 1) == true)
+    assert(not_equal(1, 2) == false)
+    assert(not_equal_u64(1, 1) == true)
+    assert(not_equal_u64(1, 2) == false)
+}

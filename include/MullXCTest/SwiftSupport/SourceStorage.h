@@ -18,6 +18,7 @@ public:
   SourceUnitStorage(const SourceUnitStorage &) = delete;
   static std::unique_ptr<SourceUnitStorage> create(std::string filePath);
   bool hasMutation(int line, int column, mull::MutatorKind kind);
+  void dump() const;
 };
 
 class SourceStorage {
@@ -28,6 +29,7 @@ public:
                      std::unique_ptr<SourceUnitStorage> storage);
   bool hasMutation(const std::string &filePath, int line, int column,
                    mull::MutatorKind kind);
+  void dump() const;
 };
 } // namespace swift
 } // namespace mull_xctest

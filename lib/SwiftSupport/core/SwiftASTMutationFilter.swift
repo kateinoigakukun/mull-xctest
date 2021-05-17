@@ -107,6 +107,11 @@ class SourceUnitStorage {
         let hash = lineColumnHash(line: line, column: column)
         storage[hash] = SyntaxMutation(line: line, column: column, kind: mutation)
     }
+    func dump() {
+        for (_, value) in storage {
+            print("\(value.line):\(value.column):\(String(describing: value.kind))")
+        }
+    }
 }
 
 let BINARY_MUTATIONS: [String: Set<SyntaxMutatorKind>] = [
@@ -210,4 +215,10 @@ func HasSyntaxMutation(storage: UnsafeRawPointer, line: Int, column: Int, rawMut
     let storage = Unmanaged<SourceUnitStorage>.fromOpaque(storage).takeUnretainedValue()
     let mutation = SyntaxMutatorKind(rawValue: rawMutatorKind)!
     return storage.hasMutation(line: line, column: column, mutation: mutation)
+}
+
+@_cdecl("mullDumpSourceUnitStorage")
+func DumpSourceUnitStorage(storage: UnsafeRawPointer) {
+    let storage = Unmanaged<SourceUnitStorage>.fromOpaque(storage).takeUnretainedValue()
+    storage.dump()
 }
