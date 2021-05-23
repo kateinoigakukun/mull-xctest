@@ -109,6 +109,22 @@ func not_equal_i32_u64(_ lhs: Int32, _ rhs: UInt64) -> Bool {
     return lhs != rhs
 }
 
+func equal_u64_i32(_ lhs: UInt64, _ rhs: Int32) -> Bool {
+    return lhs == rhs
+}
+
+func not_equal_u64_i32(_ lhs: UInt64, _ rhs: Int32) -> Bool {
+    return lhs != rhs
+}
+
+func equal_i32_u32(_ lhs: Int32, _ rhs: UInt32) -> Bool {
+    return lhs == rhs
+}
+
+func not_equal_i32_u32(_ lhs: Int32, _ rhs: UInt32) -> Bool {
+    return lhs != rhs
+}
+
 func equal_generic<T: Equatable>(_ lhs: T, _ rhs: T) -> Bool {
     return lhs == rhs
 }
@@ -140,15 +156,20 @@ func equal_generic<T: Equatable>(_ lhs: T, _ rhs: T) -> Bool {
 // CHECK-DAG: Mutation Point: swift_ne_to_eq {{.*}}/comparison_eq.swift:101:16
 // CHECK-DAG: Mutation Point: swift_eq_to_ne {{.*}}/comparison_eq.swift:105:16
 // CHECK-DAG: Mutation Point: swift_ne_to_eq {{.*}}/comparison_eq.swift:109:16
+// CHECK-DAG: Mutation Point: swift_eq_to_ne {{.*}}/comparison_eq.swift:113:16
+// CHECK-DAG: Mutation Point: swift_ne_to_eq {{.*}}/comparison_eq.swift:117:16
+// CHECK-DAG: Mutation Point: swift_eq_to_ne {{.*}}/comparison_eq.swift:121:16
+// CHECK-DAG: Mutation Point: swift_ne_to_eq {{.*}}/comparison_eq.swift:125:16
 
 import Darwin
 
 // RUN: env TEST_swift_eq_to_ne=1 \
-// RUN:   "swift_eq_to_ne:%s:7:16"=1  "swift_eq_to_ne:%s:11:16"=1 "swift_eq_to_ne:%s:15:16"=1 \
-// RUN:   "swift_eq_to_ne:%s:19:16"=1 "swift_eq_to_ne:%s:23:16"=1 "swift_eq_to_ne:%s:27:16"=1 \
-// RUN:   "swift_eq_to_ne:%s:31:16"=1 "swift_eq_to_ne:%s:35:16"=1 "swift_eq_to_ne:%s:39:16"=1 \
-// RUN:   "swift_eq_to_ne:%s:43:16"=1 "swift_eq_to_ne:%s:47:16"=1 \
-// RUN:   "swift_eq_to_ne:%s:97:16"=1 "swift_eq_to_ne:%s:105:16"=1 \
+// RUN:   "swift_eq_to_ne:%s:7:16"=1   "swift_eq_to_ne:%s:11:16"=1 "swift_eq_to_ne:%s:15:16"=1 \
+// RUN:   "swift_eq_to_ne:%s:19:16"=1  "swift_eq_to_ne:%s:23:16"=1 "swift_eq_to_ne:%s:27:16"=1 \
+// RUN:   "swift_eq_to_ne:%s:31:16"=1  "swift_eq_to_ne:%s:35:16"=1 "swift_eq_to_ne:%s:39:16"=1 \
+// RUN:   "swift_eq_to_ne:%s:43:16"=1  "swift_eq_to_ne:%s:47:16"=1 \
+// RUN:   "swift_eq_to_ne:%s:97:16"=1  "swift_eq_to_ne:%s:105:16"=1 \
+// RUN:   "swift_eq_to_ne:%s:113:16"=1 "swift_eq_to_ne:%s:121:16"=1 \
 // RUN:   %t/comp.swift.out
 if getenv("TEST_swift_eq_to_ne") != nil {
     assert(equal_Int(1, 1) == false)
@@ -178,6 +199,10 @@ if getenv("TEST_swift_eq_to_ne") != nil {
     assert(equal_u32_u64(1, 2) == true)
     assert(equal_i32_u64(1, 1) == false)
     assert(equal_i32_u64(1, 2) == true)
+    assert(equal_u64_i32(1, 1) == false)
+    assert(equal_u64_i32(1, 2) == true)
+    assert(equal_i32_u32(1, 1) == false)
+    assert(equal_i32_u32(1, 2) == true)
 }
 
 // RUN: env TEST_swift_ne_to_eq=1 \
@@ -186,6 +211,7 @@ if getenv("TEST_swift_eq_to_ne") != nil {
 // RUN:   "swift_ne_to_eq:%s:75:16"=1 "swift_ne_to_eq:%s:79:16"=1 "swift_ne_to_eq:%s:83:16"=1 \
 // RUN:   "swift_ne_to_eq:%s:87:16"=1 "swift_ne_to_eq:%s:91:16"=1 \
 // RUN:   "swift_ne_to_eq:%s:101:16"=1 "swift_ne_to_eq:%s:109:16"=1 \
+// RUN:   "swift_ne_to_eq:%s:117:16"=1 "swift_ne_to_eq:%s:125:16"=1 \
 // RUN:   %t/comp.swift.out
 if getenv("TEST_swift_ne_to_eq") != nil {
     assert(not_equal_Int(1, 1) == true)
@@ -215,4 +241,8 @@ if getenv("TEST_swift_ne_to_eq") != nil {
     assert(not_equal_u32_u64(1, 2) == false)
     assert(not_equal_i32_u64(1, 1) == true)
     assert(not_equal_i32_u64(1, 2) == false)
+    assert(not_equal_u64_i32(1, 1) == true)
+    assert(not_equal_u64_i32(1, 2) == false)
+    assert(not_equal_i32_u32(1, 1) == true)
+    assert(not_equal_i32_u32(1, 2) == false)
 }
