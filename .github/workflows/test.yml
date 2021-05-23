@@ -2,13 +2,11 @@ name: Build and test
 on: [push]
 jobs:
   build-test:
-    runs-on: macOS-11.0
+    runs-on: macOS-10.15
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: recursive
-    - name: Select Xcode
-      run: sudo xcode-select --switch /Applications/Xcode_12_5.app/Contents/Developer/
     - name: Install LLVM
       run: |
         curl -sSfL https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/clang+llvm-11.0.0-x86_64-apple-darwin.tar.xz | tar xJf -
