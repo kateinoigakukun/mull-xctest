@@ -1,6 +1,14 @@
 #include "MullXCTest/SwiftSupport/SourceStorage.h"
+#include <llvm/Support/raw_ostream.h>
 
 using namespace mull_xctest::swift;
+
+void SourceStorage::dump() const {
+  for (auto &pair : storage) {
+    llvm::outs() << pair.first << "\n";
+    pair.second->dump();
+  }
+}
 
 void SourceStorage::saveMutations(
     const std::string &filePath,
@@ -22,6 +30,7 @@ extern "C" void *mullHasSyntaxMutation(void *storage, int line, int column,
                                        int rawMutatorKind);
 extern "C" void *mullIndexSwiftSource(const unsigned char *sourcePath,
                                       int *errorCode);
+extern "C" void mullDumpSourceUnitStorage(void *storage);
 
 std::unique_ptr<SourceUnitStorage>
 SourceUnitStorage::create(SourceFilePath filePath) {
@@ -38,4 +47,8 @@ bool SourceUnitStorage::hasMutation(int line, int column,
                                     mull::MutatorKind kind) {
   return mullHasSyntaxMutation(this->swiftStorage, line, column,
                                static_cast<int>(kind));
+}
+
+void SourceUnitStorage::dump() const {
+  mullDumpSourceUnitStorage(this->swiftStorage);
 }
