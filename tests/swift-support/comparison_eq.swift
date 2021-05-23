@@ -101,6 +101,14 @@ func not_equal_u32_u64(_ lhs: UInt32, _ rhs: UInt64) -> Bool {
     return lhs != rhs
 }
 
+func equal_i32_u64(_ lhs: Int32, _ rhs: UInt64) -> Bool {
+    return lhs == rhs
+}
+
+func not_equal_i32_u64(_ lhs: Int32, _ rhs: UInt64) -> Bool {
+    return lhs != rhs
+}
+
 func equal_generic<T: Equatable>(_ lhs: T, _ rhs: T) -> Bool {
     return lhs == rhs
 }
@@ -130,6 +138,8 @@ func equal_generic<T: Equatable>(_ lhs: T, _ rhs: T) -> Bool {
 
 // CHECK-DAG: Mutation Point: swift_eq_to_ne {{.*}}/comparison_eq.swift:97:16
 // CHECK-DAG: Mutation Point: swift_ne_to_eq {{.*}}/comparison_eq.swift:101:16
+// CHECK-DAG: Mutation Point: swift_eq_to_ne {{.*}}/comparison_eq.swift:105:16
+// CHECK-DAG: Mutation Point: swift_ne_to_eq {{.*}}/comparison_eq.swift:109:16
 
 import Darwin
 
@@ -138,7 +148,7 @@ import Darwin
 // RUN:   "swift_eq_to_ne:%s:19:16"=1 "swift_eq_to_ne:%s:23:16"=1 "swift_eq_to_ne:%s:27:16"=1 \
 // RUN:   "swift_eq_to_ne:%s:31:16"=1 "swift_eq_to_ne:%s:35:16"=1 "swift_eq_to_ne:%s:39:16"=1 \
 // RUN:   "swift_eq_to_ne:%s:43:16"=1 "swift_eq_to_ne:%s:47:16"=1 \
-// RUN:   "swift_eq_to_ne:%s:97:16"=1 \
+// RUN:   "swift_eq_to_ne:%s:97:16"=1 "swift_eq_to_ne:%s:105:16"=1 \
 // RUN:   %t/comp.swift.out
 if getenv("TEST_swift_eq_to_ne") != nil {
     assert(equal_Int(1, 1) == false)
@@ -166,6 +176,8 @@ if getenv("TEST_swift_eq_to_ne") != nil {
 
     assert(equal_u32_u64(1, 1) == false)
     assert(equal_u32_u64(1, 2) == true)
+    assert(equal_i32_u64(1, 1) == false)
+    assert(equal_i32_u64(1, 2) == true)
 }
 
 // RUN: env TEST_swift_ne_to_eq=1 \
@@ -173,7 +185,7 @@ if getenv("TEST_swift_eq_to_ne") != nil {
 // RUN:   "swift_ne_to_eq:%s:63:16"=1 "swift_ne_to_eq:%s:67:16"=1 "swift_ne_to_eq:%s:71:16"=1 \
 // RUN:   "swift_ne_to_eq:%s:75:16"=1 "swift_ne_to_eq:%s:79:16"=1 "swift_ne_to_eq:%s:83:16"=1 \
 // RUN:   "swift_ne_to_eq:%s:87:16"=1 "swift_ne_to_eq:%s:91:16"=1 \
-// RUN:   "swift_ne_to_eq:%s:101:16"=1 \
+// RUN:   "swift_ne_to_eq:%s:101:16"=1 "swift_ne_to_eq:%s:109:16"=1 \
 // RUN:   %t/comp.swift.out
 if getenv("TEST_swift_ne_to_eq") != nil {
     assert(not_equal_Int(1, 1) == true)
@@ -201,4 +213,6 @@ if getenv("TEST_swift_ne_to_eq") != nil {
 
     assert(not_equal_u32_u64(1, 1) == true)
     assert(not_equal_u32_u64(1, 2) == false)
+    assert(not_equal_i32_u64(1, 1) == true)
+    assert(not_equal_i32_u64(1, 2) == false)
 }
