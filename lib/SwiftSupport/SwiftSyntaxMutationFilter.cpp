@@ -1,4 +1,4 @@
-#include "MullXCTest/SwiftSupport/SyntaxMutationFilter.h"
+#include "MullXCTest/SwiftSupport/SwiftSyntaxMutationFilter.h"
 #include <llvm/IR/Instruction.h>
 #include <mull/MutationPoint.h>
 
@@ -7,11 +7,11 @@
 
 using namespace mull_xctest::swift;
 
-std::string SyntaxMutationFilter::name() {
+std::string SwiftSyntaxMutationFilter::name() {
   return "Syntax mutation filter for Swift";
 }
 
-bool SyntaxMutationFilter::shouldSkip(mull::MutationPoint *point) {
+bool SwiftSyntaxMutationFilter::shouldSkip(mull::MutationPoint *point) {
   llvm::Instruction *instruction =
       llvm::dyn_cast<llvm::Instruction>(point->getOriginalValue());
   assert(instruction);

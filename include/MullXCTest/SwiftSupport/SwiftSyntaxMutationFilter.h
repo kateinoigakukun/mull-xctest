@@ -7,11 +7,16 @@
 
 namespace mull_xctest {
 
+class SyntaxMutationIndexer {
+  virtual void index(const std::string &sourcePath, SourceStorage &storage) = 0;
+  virtual void hasMutation(mull::SourceLocation &loc, mull::MutatorKind kind) = 0;
+};
+
 namespace swift {
 
-class SyntaxMutationFilter : public mull::MutationFilter {
+class SwiftSyntaxMutationFilter : public mull::MutationFilter {
 public:
-  SyntaxMutationFilter(mull::Diagnostics &diagnostics, SourceStorage storage)
+  SwiftSyntaxMutationFilter(mull::Diagnostics &diagnostics, SourceStorage storage)
       : diagnostics(diagnostics), storage(std::move(storage)) {}
   bool shouldSkip(mull::MutationPoint *point) override;
   std::string name() override;

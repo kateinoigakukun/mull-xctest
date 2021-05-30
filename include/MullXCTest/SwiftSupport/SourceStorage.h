@@ -6,7 +6,6 @@
 #include <unordered_map>
 
 namespace mull_xctest {
-namespace swift {
 
 using SourceFilePath = std::string;
 
@@ -31,7 +30,6 @@ public:
                    mull::MutatorKind kind);
   void dump() const;
 };
-} // namespace swift
 } // namespace mull_xctest
 
 #endif

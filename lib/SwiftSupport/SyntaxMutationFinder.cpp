@@ -5,6 +5,7 @@
 #include <mull/Parallelization/TaskExecutor.h>
 
 using namespace mull_xctest::swift;
+using namespace mull_xctest;
 
 class IndexSwiftSourceTask {
 public:

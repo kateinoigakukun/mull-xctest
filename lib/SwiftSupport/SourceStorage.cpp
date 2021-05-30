@@ -1,7 +1,7 @@
 #include "MullXCTest/SwiftSupport/SourceStorage.h"
 #include <llvm/Support/raw_ostream.h>
 
-using namespace mull_xctest::swift;
+using namespace mull_xctest;
 
 void SourceStorage::dump() const {
   for (auto &pair : storage) {
