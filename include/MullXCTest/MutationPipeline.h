@@ -6,6 +6,7 @@
 #include <mull/Config/Configuration.h>
 #include <mull/Diagnostics/Diagnostics.h>
 #include <mull/Filters/Filters.h>
+#include <mull/AST/ASTMutationFilter.h>
 #include <mull/FunctionUnderTest.h>
 #include <mull/MutationPoint.h>
 #include <mull/MutationsFinder.h>
@@ -29,6 +30,7 @@ class MutationPipeline {
   struct mull::Filters &filters;
   mull::MutationsFinder &mutationsFinder;
   std::unique_ptr<mull::MutationFilter> syntaxFilterOwner;
+  mull::ASTMutationStorage astMutationStorage;
 
 public:
   MutationPipeline(std::vector<std::string> inputObjects,
@@ -41,7 +43,8 @@ public:
       : inputObjects(inputObjects), targetExecutables(targetExecutables),
         filters(filters), mutationsFinder(mutationsFinder),
         diagnostics(diagnostics), config(config), singleTask(diagnostics),
-        pipelineConfig(pipelineConfig) {}
+        pipelineConfig(pipelineConfig),
+        astMutationStorage(diagnostics) {}
   /// @return list of compiled object files
   std::vector<std::string> run();
 
