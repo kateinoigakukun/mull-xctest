@@ -10,6 +10,7 @@
 #include <llvm/Support/Path.h>
 #include <mull/Filters/FunctionFilter.h>
 #include <mull/Filters/MutationFilter.h>
+#include <mull/AST/ASTMutationFilter.h>
 #include <mull/Mutant.h>
 #include <mull/Mutators/MutatorsFactory.h>
 #include <mull/Parallelization/Parallelization.h>
@@ -270,15 +271,12 @@ void MutationPipeline::setupSyntaxFilter(
   using namespace mull_xctest::swift;
   SyntaxMutationFinder finder;
 
-  auto storage = finder.findMutations(sourcePaths, diagnostics, config);
-  if (config.debugEnabled) {
-    storage.dump();
-  }
+  mull::ASTMutationStorage storage(diagnostics);
+  finder.findMutations(sourcePaths, storage, diagnostics, config);
 
-  auto *syntaxFilter =
-      new SwiftSyntaxMutationFilter(diagnostics, std::move(storage));
-  syntaxFilterOwner = std::unique_ptr<mull::MutationFilter>(syntaxFilter);
-  filters.mutationFilters.push_back(syntaxFilter);
+  auto *astFilter = new mull::ASTMutationFilter(diagnostics, storage);
+  syntaxFilterOwner = std::unique_ptr<mull::MutationFilter>(astFilter);
+  filters.mutationFilters.push_back(astFilter);
 }
 
 std::vector<MutationPoint *>

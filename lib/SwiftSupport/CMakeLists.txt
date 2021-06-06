@@ -1,11 +1,11 @@
 set(headers
     ${MULL_XCTEST_INCLUDE_DIR}/SwiftSupport/SyntaxMutationFinder.h
-    ${MULL_XCTEST_INCLUDE_DIR}/SwiftSupport/SyntaxMutationFilter.h
+    ${MULL_XCTEST_INCLUDE_DIR}/SwiftSupport/SwiftSyntaxMutationFilter.h
     ${MULL_XCTEST_INCLUDE_DIR}/SwiftSupport/SourceStorage.h
 )
 
 add_library(mullSwiftSupport
-  SyntaxMutationFilter.cpp
+  SwiftSyntaxMutationFilter.cpp
   SyntaxMutationFinder.cpp
   SourceStorage.cpp
   ${headers})

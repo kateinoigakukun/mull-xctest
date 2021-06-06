@@ -9,7 +9,6 @@ namespace mull_xctest {
 
 class SyntaxMutationIndexer {
   virtual void index(const std::string &sourcePath, SourceStorage &storage) = 0;
-  virtual void hasMutation(mull::SourceLocation &loc, mull::MutatorKind kind) = 0;
 };
 
 namespace swift {

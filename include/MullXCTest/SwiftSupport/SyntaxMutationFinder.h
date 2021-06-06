@@ -4,6 +4,7 @@
 #include "MullXCTest/SwiftSupport/SourceStorage.h"
 #include <mull/Config/Configuration.h>
 #include <mull/Diagnostics/Diagnostics.h>
+#include <mull/AST/ASTMutationStorage.h>
 #include <set>
 
 namespace mull_xctest {
@@ -11,9 +12,10 @@ namespace swift {
 
 class SyntaxMutationFinder {
 public:
-  SourceStorage findMutations(std::set<SourceFilePath> &sources,
-                              mull::Diagnostics &diagnostics,
-                              const mull::Configuration &config);
+  void findMutations(std::set<SourceFilePath> &sources,
+                     mull::ASTMutationStorage &astMutationStorage,
+                     mull::Diagnostics &diagnostics,
+                     const mull::Configuration &config);
 };
 } // namespace swift
 } // namespace mull_xctest

@@ -25,6 +25,8 @@ else()
         -o ${CMAKE_CURRENT_BINARY_DIR}/SwiftASTMutationFilter.swift.o
         -runtime-compatibility-version 5.1 $<$<CONFIG:Debug>:-g>
         -I $<TARGET_PROPERTY:SwiftSyntax::SwiftSyntax,INTERFACE_INCLUDE_DIRECTORIES>
+        -I ${MULL_XCTEST_SOURCE_DIR}/include/mull-c
+        -Xcc -I${MULL_XCTEST_SOURCE_DIR}/include
         -sdk ${CMAKE_OSX_SYSROOT}
         ${swift_sources})
   add_custom_target(mullSwiftSupportCore_obj
