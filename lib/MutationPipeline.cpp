@@ -1,5 +1,4 @@
 #include "MullXCTest/MutationPipeline.h"
-#include "MullXCTest/SwiftSupport/SwiftSyntaxMutationFilter.h"
 #include "MullXCTest/SwiftSupport/SyntaxMutationFinder.h"
 #include "MullXCTest/Tasks/ExtractEmbeddedFileTask.h"
 #include "MullXCTest/Tasks/LoadBitcodeFromBufferTask.h"
