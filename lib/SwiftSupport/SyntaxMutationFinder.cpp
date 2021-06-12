@@ -3,51 +3,61 @@
 #include <mull/Diagnostics/Diagnostics.h>
 #include <mull/Parallelization/Progress.h>
 #include <mull/Parallelization/TaskExecutor.h>
+#include <mull-c/AST/ASTMutationStorage.h>
 
 using namespace mull_xctest::swift;
+using namespace mull_xctest;
+
+extern "C" void *mull_swift_IndexSource(const char *sourcePath,
+                                        CASTMutationStorage storage,
+                                        int *errorCode);
 
 class IndexSwiftSourceTask {
 public:
   using In = std::set<SourceFilePath>;
   using Out = std::vector<
-      std::pair<SourceFilePath, std::unique_ptr<SourceUnitStorage>>>;
+      std::pair<SourceFilePath, std::unique_ptr<ASTMutationStorage>>>;
   using iterator = In::iterator;
+  mull::Diagnostics &diags;
 
-  IndexSwiftSourceTask() {}
+  IndexSwiftSourceTask(mull::Diagnostics &diags) : diags(diags) {}
 
   void operator()(iterator begin, iterator end, Out &storage,
                   mull::progress_counter &counter);
 };
 
 void IndexSwiftSourceTask::operator()(iterator begin, iterator end,
-                                      Out &storage,
+                                      Out &out,
                                       mull::progress_counter &counter) {
   for (auto it = begin; it != end; it++, counter.increment()) {
     std::string sourcePath = *it;
-    std::unique_ptr<SourceUnitStorage> unit =
-        SourceUnitStorage::create(sourcePath);
-    if (!unit)
-      continue;
-    storage.emplace_back(sourcePath, std::move(unit));
+    int errorCode;
+    auto storage = std::make_unique<ASTMutationStorage>(diags);
+    mull_swift_IndexSource(sourcePath.c_str(), storage.get(), &errorCode);
+    out.emplace_back(sourcePath, std::move(storage));
   }
 }
 
-SourceStorage
+void
 SyntaxMutationFinder::findMutations(std::set<SourceFilePath> &sources,
+                                    mull::ASTMutationStorage &astMutationStorage,
                                     mull::Diagnostics &diagnostics,
                                     const mull::Configuration &config) {
-  std::vector<std::pair<SourceFilePath, std::unique_ptr<SourceUnitStorage>>>
+  std::vector<std::pair<SourceFilePath, std::unique_ptr<ASTMutationStorage>>>
       mutationsAsVector;
-  std::vector<IndexSwiftSourceTask> tasks(config.parallelization.workers);
-  constexpr size_t DesiredStackSize = 8 << 20;
+  std::vector<IndexSwiftSourceTask> tasks;
+  for (int i = 0; i < config.parallelization.workers; i++) {
+    tasks.emplace_back(diagnostics);
+  }
+  constexpr size_t desiredStackSize = 8 << 20;
   mull_xctest::PthreadTaskExecutor indexer(diagnostics, "Syntax Index",
-                                           DesiredStackSize, sources,
+                                           desiredStackSize, sources,
                                            mutationsAsVector, tasks);
   indexer.execute();
 
-  SourceStorage storage;
   for (auto &pair : mutationsAsVector) {
-    storage.saveMutations(pair.first, std::move(pair.second));
+    for (auto mutation : pair.second->storage) {
+      astMutationStorage.storage.emplace(mutation.first, mutation.second);
+    }
   }
-  return std::move(storage);
 }

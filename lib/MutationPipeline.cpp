@@ -1,5 +1,4 @@
 #include "MullXCTest/MutationPipeline.h"
-#include "MullXCTest/SwiftSupport/SyntaxMutationFilter.h"
 #include "MullXCTest/SwiftSupport/SyntaxMutationFinder.h"
 #include "MullXCTest/Tasks/ExtractEmbeddedFileTask.h"
 #include "MullXCTest/Tasks/LoadBitcodeFromBufferTask.h"
@@ -270,15 +269,11 @@ void MutationPipeline::setupSyntaxFilter(
   using namespace mull_xctest::swift;
   SyntaxMutationFinder finder;
 
-  auto storage = finder.findMutations(sourcePaths, diagnostics, config);
-  if (config.debugEnabled) {
-    storage.dump();
-  }
+  finder.findMutations(sourcePaths, astMutationStorage, diagnostics, config);
 
-  auto *syntaxFilter =
-      new SyntaxMutationFilter(diagnostics, std::move(storage));
-  syntaxFilterOwner = std::unique_ptr<mull::MutationFilter>(syntaxFilter);
-  filters.mutationFilters.push_back(syntaxFilter);
+  auto *astFilter = new mull::ASTMutationFilter(diagnostics, astMutationStorage);
+  syntaxFilterOwner = std::unique_ptr<mull::MutationFilter>(astFilter);
+  filters.mutationFilters.push_back(astFilter);
 }
 
 std::vector<MutationPoint *>

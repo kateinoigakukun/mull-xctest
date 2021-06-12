@@ -1,115 +1,31 @@
 import SwiftSyntax
+import Mull_C
 
-enum SyntaxMutatorKind: Int {
-    // FIXME: These cases are copied from mull::MutationKind.
-    // Use more extensible way
-    case InvalidKind,
-
-    NegateMutator,
-    ScalarValueMutator,
-
-    CXX_RemoveVoidCall,
-    CXX_ReplaceScalarCall,
-
-    CXX_AddToSub,
-    CXX_AddAssignToSubAssign,
-    CXX_PreIncToPreDec,
-    CXX_PostIncToPostDec,
-
-    CXX_SubToAdd,
-    CXX_SubAssignToAddAssign,
-    CXX_PreDecToPreInc,
-    CXX_PostDecToPostInc,
-
-    CXX_MulToDiv,
-    CXX_MulAssignToDivAssign,
-
-    CXX_DivToMul,
-    CXX_DivAssignToMulAssign,
-
-    CXX_RemToDiv,
-    CXX_RemAssignToDivAssign,
-
-    CXX_BitwiseNotToNoop,
-    CXX_UnaryMinusToNoop,
-
-    CXX_LShiftToRShift,
-    CXX_LShiftAssignToRShiftAssign,
-
-    CXX_RShiftToLShift,
-    CXX_RShiftAssignToLShiftAssign,
-
-    CXX_Logical_AndToOr,
-    CXX_Logical_OrToAnd,
-
-    CXX_Bitwise_OrToAnd,
-    CXX_Bitwise_OrAssignToAndAssign,
-    CXX_Bitwise_AndToOr,
-    CXX_Bitwise_AndAssignToOrAssign,
-    CXX_Bitwise_XorToOr,
-    CXX_Bitwise_XorAssignToOrAssign,
-
-    CXX_LessThanToLessOrEqual,
-    CXX_LessOrEqualToLessThan,
-    CXX_GreaterThanToGreaterOrEqual,
-    CXX_GreaterOrEqualToGreaterThan,
-
-    CXX_GreaterThanToLessOrEqual,
-    CXX_GreaterOrEqualToLessThan,
-    CXX_LessThanToGreaterOrEqual,
-    CXX_LessOrEqualToGreaterThan,
-
-    CXX_EqualToNotEqual,
-    CXX_NotEqualToEqual,
-
-    CXX_AssignConst,
-    CXX_InitConst,
-
-    CXX_RemoveNegation,
-
-    Swift_Logical_AndToOr,
-    Swift_Logical_OrToAnd,
-
-    Swift_EqualToNotEqual,
-    Swift_NotEqualToEqual
-}
-typealias LineColumnHash = Int
-
-struct SyntaxMutation {
-    let line: Int
-    let column: Int
-    let kind: Set<SyntaxMutatorKind>
-}
-
-func lineColumnHash(line: Int, column: Int) -> LineColumnHash {
-    // Use 'Cantor pairing function' to map (Int, Int) to Int
-    return (line + column) * (line + column + 1) / 2 + line
-}
+typealias SyntaxMutatorKind = CMutatorKind
 
 class SourceUnitStorage {
+    let inner: CASTMutationStorage
+    let sourceFile: String
     let converter: SourceLocationConverter
-    private var storage: [LineColumnHash: SyntaxMutation] = [:]
 
-    internal init(converter: SourceLocationConverter) {
+    internal init(inner: CASTMutationStorage,
+                  sourceFile: String,
+                  converter: SourceLocationConverter) {
+        self.inner = inner
+        self.sourceFile = sourceFile
         self.converter = converter
-    }
-
-    func hasMutation(line: Int, column: Int, mutation kind: SyntaxMutatorKind) -> Bool {
-        let hash = lineColumnHash(line: line, column: column)
-        guard let mutation = storage[hash] else { return false }
-        return mutation.kind.contains(kind)
     }
     func save<S: SyntaxProtocol>(mutation: Set<SyntaxMutatorKind>, node: S) {
         let location = node.startLocation(converter: converter)
         guard let line = location.line, let column = location.column else {
             return
         }
-        let hash = lineColumnHash(line: line, column: column)
-        storage[hash] = SyntaxMutation(line: line, column: column, kind: mutation)
-    }
-    func dump() {
-        for (_, value) in storage {
-            print("\(value.line):\(value.column):\(String(describing: value.kind))")
+        sourceFile.withCString { sourceFilePtr in
+            for kind in mutation {
+                mull_ASTMutationStorage_saveMutation(
+                    inner, sourceFilePtr, kind, Int32(line), Int32(column)
+                )
+            }
         }
     }
 }
@@ -188,37 +104,24 @@ enum ErrorCode: Int, Swift.Error {
     case syntaxParserError
 }
 
-@_cdecl("mullIndexSwiftSource")
+@_cdecl("mull_swift_IndexSource")
 func IndexSwiftSource(sourcePath: UnsafePointer<UInt8>,
-                      errorCode: UnsafeMutablePointer<Int>) -> UnsafeMutableRawPointer? {
+                      storagePtr: CASTMutationStorage,
+                      errorCode: UnsafeMutablePointer<Int>) {
     guard let (sourcePath, _) = String.decodeCString(sourcePath, as: UTF8.self) else {
         errorCode.pointee = ErrorCode.invalidSourcePathChars.rawValue
-        return nil
+        return
     }
     let sourceFile: SourceFileSyntax
     do {
         sourceFile = try SyntaxParser.parse(URL(fileURLWithPath: sourcePath))
     } catch {
         errorCode.pointee = ErrorCode.syntaxParserError.rawValue
-        return nil
+        return
     }
     let converter = SourceLocationConverter(file: sourcePath, tree: sourceFile)
-    let storage = SourceUnitStorage(converter: converter)
+    let storage = SourceUnitStorage(inner: storagePtr, sourceFile: sourcePath,
+                                    converter: converter)
     let indexer = SourceUnitLocationIndexer(storage: storage)
     indexer.walk(sourceFile)
-
-    return Unmanaged.passRetained(storage).toOpaque()
-}
-
-@_cdecl("mullHasSyntaxMutation")
-func HasSyntaxMutation(storage: UnsafeRawPointer, line: Int, column: Int, rawMutatorKind: SyntaxMutatorKind.RawValue) -> Bool {
-    let storage = Unmanaged<SourceUnitStorage>.fromOpaque(storage).takeUnretainedValue()
-    let mutation = SyntaxMutatorKind(rawValue: rawMutatorKind)!
-    return storage.hasMutation(line: line, column: column, mutation: mutation)
-}
-
-@_cdecl("mullDumpSourceUnitStorage")
-func DumpSourceUnitStorage(storage: UnsafeRawPointer) {
-    let storage = Unmanaged<SourceUnitStorage>.fromOpaque(storage).takeUnretainedValue()
-    storage.dump()
 }
