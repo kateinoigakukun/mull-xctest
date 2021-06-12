@@ -14,7 +14,7 @@ opt<std::string> InputFile(Positional, desc("<input file>"), Required,
 opt<unsigned> Workers("workers", desc("How many threads to use"), Optional,
                       value_desc("number"));
 
-list<std::string> XCTestArgs("xctest", desc("Pass flag through to xctest invocations"), OneOrMore,
+list<std::string> XCTestArgs("xctest", desc("Pass flag through to xctest invocations"), ZeroOrMore,
                              value_desc("option"));
 
 using namespace llvm;
