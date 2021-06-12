@@ -1,9 +1,11 @@
 set(headers
     ${MULL_XCTEST_INCLUDE_DIR}/SwiftSupport/SyntaxMutationFinder.h
+    ${MULL_XCTEST_INCLUDE_DIR}/SwiftSupport/RuntimeFunctionFilter.h
 )
 
 add_library(mullSwiftSupport
   SyntaxMutationFinder.cpp
+  RuntimeFunctionFilter.cpp
   ${headers})
 
 target_link_libraries(mullSwiftSupport

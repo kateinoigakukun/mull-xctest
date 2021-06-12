@@ -1,4 +1,5 @@
 #include "MullXCTest/MutationPipeline.h"
+#include "MullXCTest/SwiftSupport/RuntimeFunctionFilter.h"
 #include "MullXCTest/SwiftSupport/SyntaxMutationFinder.h"
 #include "MullXCTest/Tasks/ExtractEmbeddedFileTask.h"
 #include "MullXCTest/Tasks/LoadBitcodeFromBufferTask.h"
@@ -72,6 +73,7 @@ std::vector<std::string> MutationPipeline::run() {
   // Step 3: Find mutation points from LLVM modules
   auto mutationPoints = findMutationPoints(program);
 
+  setupSwiftFilter();
   if (pipelineConfig.EnableSyntaxFilter) {
     setupSyntaxFilter(mutationPoints);
   }
@@ -258,6 +260,12 @@ void MutationPipeline::selectInstructions(
   filterRunner.execute();
 }
 
+void MutationPipeline::setupSwiftFilter() {
+  auto *runtimeFnFilter = new swift::RuntimeFunctionFilter(diagnostics);
+  filterOwner.emplace_back(runtimeFnFilter);
+  filters.mutationFilters.push_back(runtimeFnFilter);
+}
+
 void MutationPipeline::setupSyntaxFilter(
     std::vector<MutationPoint *> &mutationPoints) {
   std::set<std::string> sourcePaths;
@@ -272,7 +280,8 @@ void MutationPipeline::setupSyntaxFilter(
   finder.findMutations(sourcePaths, astMutationStorage, diagnostics, config);
 
   auto *astFilter = new mull::ASTMutationFilter(diagnostics, astMutationStorage);
-  syntaxFilterOwner = std::unique_ptr<mull::MutationFilter>(astFilter);
+
+  filterOwner.emplace_back(astFilter);
   filters.mutationFilters.push_back(astFilter);
 }
 

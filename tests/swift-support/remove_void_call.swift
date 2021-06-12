@@ -26,7 +26,7 @@ func capture_by_closure(_ f: @escaping () -> Void) {
 
 func expect_deinit() {
   let c = C()
-  capture_by_closure({ [c] in print(c) })
+  capture_by_closure({ [c] in _ = c })
 }
 
 // CHECK: Mutation Point: cxx_remove_void_call {{.*}}/remove_void_call.swift:12:3
@@ -41,8 +41,6 @@ if getenv("TEST_cxx_remove_void_call") != nil {
 
 // RUN: env TEST_expect_deinit=1 "cxx_remove_void_call:%s:29:3"=1 %t/remove_void_call.swift.out
 if getenv("TEST_expect_deinit") != nil {
-  print("TEST_expect_deinit", deinitCalled)
   expect_deinit()
   assert(deinitCalled)
-  print("TEST_expect_deinit", deinitCalled)
 }

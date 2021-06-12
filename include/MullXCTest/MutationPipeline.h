@@ -29,7 +29,7 @@ class MutationPipeline {
   mull::SingleTaskExecutor singleTask;
   struct mull::Filters &filters;
   mull::MutationsFinder &mutationsFinder;
-  std::unique_ptr<mull::MutationFilter> syntaxFilterOwner;
+  std::vector<std::unique_ptr<mull::MutationFilter>> filterOwner;
   mull::ASTMutationStorage astMutationStorage;
 
 public:
@@ -54,6 +54,7 @@ private:
   std::vector<mull::FunctionUnderTest>
   filterFunctions(std::vector<mull::FunctionUnderTest> functions);
   std::vector<mull::MutationPoint *> findMutationPoints(mull::Program &program);
+  void setupSwiftFilter();
   void setupSyntaxFilter(std::vector<mull::MutationPoint *> &mutationPoints);
   std::vector<mull::MutationPoint *>
   filterMutations(std::vector<mull::MutationPoint *> mutationPoints);
