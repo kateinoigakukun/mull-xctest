@@ -80,6 +80,15 @@ class SourceUnitLocationIndexer: SyntaxAnyVisitor {
     }
 
     override func visitPost(_ node: FunctionCallExprSyntax) {
+        guard let parent = node.parent,
+              let codeBlockItem = parent.as(CodeBlockItemSyntax.self),
+              let codeBlockList = codeBlockItem.parent?.as(CodeBlockItemListSyntax.self) else {
+            return
+        }
+        // single code block may be implicit-return
+        guard codeBlockList.count != 1 else {
+            return
+        }
         let mutation = SyntaxMutatorKind.CXX_RemoveVoidCall
         storage.save(mutation: [mutation], node: node)
     }

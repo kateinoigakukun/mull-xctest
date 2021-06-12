@@ -29,7 +29,22 @@ func expect_deinit() {
   capture_by_closure({ [c] in _ = c })
 }
 
+func makeInt() -> Int {
+  return 0
+}
+
+func non_void_call() {
+  let i = makeInt()
+  _ = i
+}
+
+func non_void_call_2() -> Int {
+  makeInt()
+}
+
 // CHECK: Mutation Point: cxx_remove_void_call {{.*}}/remove_void_call.swift:12:3
+// CHECK-NOT: Mutation Point: cxx_remove_void_call {{.*}}/remove_void_call.swift:36:11
+// CHECK-NOT: Mutation Point: cxx_remove_void_call {{.*}}/remove_void_call.swift:42:3
 
 import Darwin
 
