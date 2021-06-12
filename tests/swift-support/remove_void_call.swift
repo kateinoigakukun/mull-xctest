@@ -42,6 +42,25 @@ func non_void_call_2() -> Int {
   makeInt()
 }
 
+func unrecoverable_func_1() {
+  assert(false)
+}
+func unrecoverable_func_2() {
+  precondition(false)
+}
+func unrecoverable_func_3() {
+  assertionFailure()
+}
+func unrecoverable_func_4() {
+  preconditionFailure()
+}
+func unrecoverable_func_5() {
+  fatalError()
+}
+func unrecoverable_func_6() {
+  _overflowChecked((1, false))
+}
+
 // CHECK: Mutation Point: cxx_remove_void_call {{.*}}/remove_void_call.swift:12:3
 // CHECK-NOT: Mutation Point: cxx_remove_void_call {{.*}}/remove_void_call.swift:36:11
 // CHECK-NOT: Mutation Point: cxx_remove_void_call {{.*}}/remove_void_call.swift:42:3

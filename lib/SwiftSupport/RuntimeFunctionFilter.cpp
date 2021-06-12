@@ -13,6 +13,20 @@ std::string RuntimeFunctionFilter::name() {
   return "Swift runtime function filter";
 }
 
+bool isUnrecoverableFunction(llvm::Function *f) {
+  const std::vector<std::string> functions = {
+    "$ss12precondition__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_",
+    "$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF",
+    "$ss16assertionFailure_4file4lineySSyXK_s12StaticStringVSutF",
+  };
+  for (auto funcName : functions) {
+    if (f->getName().equals(funcName)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool RuntimeFunctionFilter::shouldSkip(mull::MutationPoint *point) {
   if (point->getMutator()->mutatorKind() !=
       mull::MutatorKind::CXX_RemoveVoidCall) {
@@ -31,5 +45,11 @@ bool RuntimeFunctionFilter::shouldSkip(mull::MutationPoint *point) {
 
   llvm::Function *fn = call->getCalledFunction();
   bool isUserSwiftFunc = fn->getName().startswith("$s");
-  return !isUserSwiftFunc;
+  if (!isUserSwiftFunc) {
+    return true;
+  }
+  if (isUnrecoverableFunction(fn)) {
+    return true;
+  }
+  return false;
 }
