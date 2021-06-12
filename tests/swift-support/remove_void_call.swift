@@ -13,6 +13,22 @@ func call_void_function() -> Int {
   return 0
 }
 
+var deinitCalled = false
+class C {
+  deinit {
+    deinitCalled = true
+  }
+}
+
+func capture_by_closure(_ f: @escaping () -> Void) {
+  f()
+}
+
+func expect_deinit() {
+  let c = C()
+  capture_by_closure({ [c] in print(c) })
+}
+
 // CHECK: Mutation Point: cxx_remove_void_call {{.*}}/remove_void_call.swift:12:3
 
 import Darwin
@@ -21,4 +37,12 @@ import Darwin
 if getenv("TEST_cxx_remove_void_call") != nil {
   _ = call_void_function()
   assert(globalState == 0)
+}
+
+// RUN: env TEST_expect_deinit=1 "cxx_remove_void_call:%s:29:3"=1 %t/remove_void_call.swift.out
+if getenv("TEST_expect_deinit") != nil {
+  print("TEST_expect_deinit", deinitCalled)
+  expect_deinit()
+  assert(deinitCalled)
+  print("TEST_expect_deinit", deinitCalled)
 }
