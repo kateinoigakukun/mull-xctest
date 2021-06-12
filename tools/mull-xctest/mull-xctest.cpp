@@ -7,10 +7,17 @@
 #include <vector>
 
 using namespace llvm::cl;
-using namespace llvm;
 
 opt<std::string> InputFile(Positional, desc("<input file>"), Required,
                            value_desc("path"));
+
+opt<unsigned> Workers("workers", desc("How many threads to use"), Optional,
+                      value_desc("number"));
+
+list<std::string> XCTestArgs("xctest", desc("Pass flag through to xctest invocations"), OneOrMore,
+                             value_desc("option"));
+
+using namespace llvm;
 
 int main(int argc, char **argv) {
   bool validOptions =
@@ -28,9 +35,14 @@ int main(int argc, char **argv) {
   configuration.parallelization = mull::ParallelizationConfig::defaultConfig();
   diagnostics.enableDebugMode();
 
+  if (Workers) {
+    configuration.parallelization.workers = Workers;
+    configuration.parallelization.mutantExecutionWorkers = Workers;
+  }
+
   factory.init();
   mull_xctest::XCTestInvocation invocation(InputFile, factory, diagnostics,
-                                           configuration);
+                                           configuration, XCTestArgs);
   mull::IDEReporter reporter(diagnostics);
   auto results = invocation.run();
   reporter.reportResults(*results);

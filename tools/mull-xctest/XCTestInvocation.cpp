@@ -4,6 +4,7 @@
 #include <mull/MutationResult.h>
 #include <mull/Parallelization/Parallelization.h>
 #include <mull/Toolchain/Runner.h>
+#include <sstream>
 
 using namespace llvm;
 using namespace mull;
@@ -20,9 +21,11 @@ public:
 
   MutantExecutionTask(const Configuration &configuration,
                       Diagnostics &diagnostics, const std::string executable,
-                      const std::string testBundle, ExecutionResult &baseline)
+                      const std::string testBundle, ExecutionResult &baseline,
+                      const std::vector<std::string> XCTestArgs)
       : configuration(configuration), diagnostics(diagnostics),
-        executable(executable), testBundle(testBundle), baseline(baseline) {}
+        executable(executable), testBundle(testBundle), baseline(baseline),
+        XCTestArgs(XCTestArgs) {}
 
   void operator()(iterator begin, iterator end, Out &storage,
                   progress_counter &counter);
@@ -32,18 +35,24 @@ private:
   Diagnostics &diagnostics;
   const std::string executable;
   const std::string testBundle;
+  const std::vector<std::string> XCTestArgs;
   ExecutionResult &baseline;
 };
 
 void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
                                      progress_counter &counter) {
   Runner runner(diagnostics);
+  std::vector<std::string> arguments;
+  arguments.push_back("xctest");
+  arguments.insert(arguments.end(), XCTestArgs.begin(), XCTestArgs.end());
+  arguments.push_back(testBundle);
+
   for (auto it = begin; it != end; ++it, counter.increment()) {
     auto &mutant = *it;
     ExecutionResult result;
     if (mutant->isCovered()) {
       result = runner.runProgram(
-          executable, {"xctest", testBundle}, {mutant->getIdentifier()},
+          executable, arguments, {mutant->getIdentifier()},
           baseline.runningTime * 10, configuration.captureMutantOutput,
           std::nullopt);
     } else {
@@ -76,7 +85,7 @@ std::unique_ptr<Result> XCTestInvocation::run() {
   std::vector<MutantExecutionTask> tasks;
   tasks.reserve(config.parallelization.mutantExecutionWorkers);
   for (int i = 0; i < config.parallelization.mutantExecutionWorkers; i++) {
-    tasks.emplace_back(config, diagnostics, xcrun, testBundle.str(), baseline);
+    tasks.emplace_back(config, diagnostics, xcrun, testBundle.str(), baseline, XCTestArgs);
   }
   TaskExecutor<MutantExecutionTask> mutantRunner(diagnostics, "Running mutants",
                                                  mutants, mutationResults,

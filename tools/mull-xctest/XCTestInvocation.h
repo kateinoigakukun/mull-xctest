@@ -19,13 +19,15 @@ class XCTestInvocation {
   mull::Diagnostics &diagnostics;
   const mull::Configuration &config;
   mull::SingleTaskExecutor singleTask;
+  const std::vector<std::string> XCTestArgs;
 
 public:
   XCTestInvocation(llvm::StringRef testBundle, mull::MutatorsFactory &factory,
                    mull::Diagnostics &diagnostics,
-                   const mull::Configuration &config)
+                   const mull::Configuration &config,
+                   const std::vector<std::string> XCTestArgs)
       : testBundle(testBundle), factory(factory), diagnostics(diagnostics),
-        config(config), singleTask(diagnostics) {}
+        config(config), singleTask(diagnostics), XCTestArgs(XCTestArgs) {}
   std::unique_ptr<mull::Result> run();
 
 private:
