@@ -59,7 +59,7 @@ std::vector<std::string> MutationPipeline::run() {
   std::vector<mull_xctest::LoadBitcodeFromBufferTask> tasks;
   for (int i = 0; i < workers; i++) {
     auto context = std::make_unique<llvm::LLVMContext>();
-    tasks.emplace_back(diagnostics, *context);
+    tasks.emplace_back(diagnostics);
     contexts.push_back(std::move(context));
   }
   std::vector<std::unique_ptr<mull::Bitcode>> bitcode;

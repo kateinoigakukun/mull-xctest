@@ -16,16 +16,14 @@ public:
   using Out = std::vector<std::unique_ptr<mull::Bitcode>>;
   using iterator = In::iterator;
 
-  LoadBitcodeFromBufferTask(mull::Diagnostics &diagnostics,
-                            llvm::LLVMContext &context)
-      : diagnostics(diagnostics), context(context) {}
+  LoadBitcodeFromBufferTask(mull::Diagnostics &diagnostics)
+      : diagnostics(diagnostics) {}
 
   void operator()(iterator begin, iterator end, Out &storage,
                   mull::progress_counter &counter);
 
 private:
   mull::Diagnostics &diagnostics;
-  llvm::LLVMContext &context;
 };
 
 } // namespace mull_xctest

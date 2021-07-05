@@ -13,8 +13,9 @@ void LoadBitcodeFromBufferTask::operator()(iterator begin, iterator end,
                                            mull::progress_counter &counter) {
   for (auto it = begin; it != end; it++, counter.increment()) {
 
+    auto context = std::make_unique<llvm::LLVMContext>();
     auto module =
-        mull::loadModuleFromBuffer(context, *std::move(*it), diagnostics);
+        mull::loadModuleFromBuffer(*context, *std::move(*it), diagnostics);
 
     if (module == nullptr) {
       diagnostics.warning(
@@ -32,7 +33,7 @@ void LoadBitcodeFromBufferTask::operator()(iterator begin, iterator end,
 
     assert(module && "Could not load module");
 
-    auto bitcode = std::make_unique<mull::Bitcode>(std::move(module));
+    auto bitcode = std::make_unique<mull::Bitcode>(std::move(context), std::move(module));
     storage.push_back(std::move(bitcode));
   }
 }
