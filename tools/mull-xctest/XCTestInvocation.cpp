@@ -58,6 +58,13 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
     } else {
       result.status = NotCovered;
     }
+    if (result.status == Timedout) {
+      std::stringstream message;
+      message << "Timedout runningTime=" << result.runningTime << "\n";
+      message << "         exitStatus=" << result.exitStatus << "\n";
+      message << "         stderrOutput=" << result.stderrOutput << "\n";
+      message << "         stdoutOutput=" << result.stdoutOutput << "\n";
+    }
     storage.push_back(std::make_unique<MutationResult>(result, mutant.get()));
   }
 }
