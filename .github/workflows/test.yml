@@ -7,6 +7,8 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: recursive
+    - name: Select Xcode version
+      run: sudo xcode-select -s /Applications/Xcode_12.4.app
     - name: Install LLVM
       run: |
         curl -sSfL https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/clang+llvm-11.0.0-x86_64-apple-darwin.tar.xz | tar xJf -
