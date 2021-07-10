@@ -1,6 +1,7 @@
 // RUN: %empty-directory(%t)
 // RUN: swiftc %s -tools-directory %mull-xctest-bin -embed-bitcode -g -o %t/assignment.swift.out -sdk %target-sdk
 // RUN: mull-dump-mutants %t/assignment.swift.out | FileCheck %s
+// REQUIRES: cxx_assign_const
 
 func replace_assignment(_ a: inout Int, _ b: Int) {
   a = b + 100
