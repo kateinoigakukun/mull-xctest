@@ -15,9 +15,11 @@ std::string RuntimeFunctionFilter::name() {
 
 bool isUnrecoverableFunction(llvm::Function *f) {
   const std::vector<std::string> functions = {
-    "$ss12precondition__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_",
-    "$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF",
-    "$ss16assertionFailure_4file4lineySSyXK_s12StaticStringVSutF",
+      "$ss12precondition__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_"
+      "SSycfu_",
+      "$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_"
+      "SSAHSus6UInt32VtF",
+      "$ss16assertionFailure_4file4lineySSyXK_s12StaticStringVSutF",
   };
   for (auto funcName : functions) {
     if (f->getName().equals(funcName)) {

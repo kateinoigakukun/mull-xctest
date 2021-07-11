@@ -279,7 +279,8 @@ void MutationPipeline::setupSyntaxFilter(
 
   finder.findMutations(sourcePaths, astMutationStorage, diagnostics, config);
 
-  auto *astFilter = new mull::ASTMutationFilter(diagnostics, astMutationStorage);
+  auto *astFilter =
+      new mull::ASTMutationFilter(diagnostics, astMutationStorage);
 
   filterOwner.emplace_back(astFilter);
   filters.mutationFilters.push_back(astFilter);

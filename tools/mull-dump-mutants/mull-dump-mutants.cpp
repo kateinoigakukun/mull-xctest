@@ -18,11 +18,11 @@ using namespace mull_xctest;
 static std::string dumpMutant(mull::Mutant &mutant) {
   std::stringstream ss;
   ss << "Mutation Point: " << mutant.getMutatorIdentifier() << " "
-     << mutant.getSourceLocation().filePath << ":" << mutant.getSourceLocation().line << ":"
+     << mutant.getSourceLocation().filePath << ":"
+     << mutant.getSourceLocation().line << ":"
      << mutant.getSourceLocation().column;
   return ss.str();
 }
-
 
 opt<std::string> InputFile(Positional, desc("<input file>"), Required,
                            value_desc("path"));

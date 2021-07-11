@@ -33,7 +33,8 @@ void LoadBitcodeFromBufferTask::operator()(iterator begin, iterator end,
 
     assert(module && "Could not load module");
 
-    auto bitcode = std::make_unique<mull::Bitcode>(std::move(context), std::move(module));
+    auto bitcode =
+        std::make_unique<mull::Bitcode>(std::move(context), std::move(module));
     storage.push_back(std::move(bitcode));
   }
 }

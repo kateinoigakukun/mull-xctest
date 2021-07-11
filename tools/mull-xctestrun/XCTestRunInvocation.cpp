@@ -195,9 +195,9 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
     llvm::sys::path::append(logPath, std::to_string(taskID) + ".log");
 
   int count = std::distance(begin, end);
-  result = RunXcodeBuildTest(diagnostics, localRunFile, resultBundlePath,
-                             runConfig.xcodebuildArgs, {},
-                             baseline.runningTime * count * 10, logPath.str().str());
+  result = RunXcodeBuildTest(
+      diagnostics, localRunFile, resultBundlePath, runConfig.xcodebuildArgs, {},
+      baseline.runningTime * count * 10, logPath.str().str());
   XCResultFile resultFile(resultBundlePath);
   auto failureTargets = resultFile.getFailureTestTargets();
   if (!failureTargets) {
@@ -256,8 +256,8 @@ std::unique_ptr<Result> XCTestRunInvocation::run() {
                                                  std::move(tasks));
   mutantRunner.execute();
 
-  return std::make_unique<Result>(
-      std::move(mutants), std::move(mutationResults));
+  return std::make_unique<Result>(std::move(mutants),
+                                  std::move(mutationResults));
 }
 
 std::vector<std::unique_ptr<mull::Mutant>>

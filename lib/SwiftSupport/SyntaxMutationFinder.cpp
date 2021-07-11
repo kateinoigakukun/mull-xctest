@@ -1,9 +1,9 @@
 #include "MullXCTest/SwiftSupport/SyntaxMutationFinder.h"
 #include "MullXCTest/PthreadTaskExecutor.h"
+#include <mull-c/AST/ASTMutationStorage.h>
 #include <mull/Diagnostics/Diagnostics.h>
 #include <mull/Parallelization/Progress.h>
 #include <mull/Parallelization/TaskExecutor.h>
-#include <mull-c/AST/ASTMutationStorage.h>
 
 using namespace mull_xctest::swift;
 using namespace mull_xctest;
@@ -26,8 +26,7 @@ public:
                   mull::progress_counter &counter);
 };
 
-void IndexSwiftSourceTask::operator()(iterator begin, iterator end,
-                                      Out &out,
+void IndexSwiftSourceTask::operator()(iterator begin, iterator end, Out &out,
                                       mull::progress_counter &counter) {
   for (auto it = begin; it != end; it++, counter.increment()) {
     std::string sourcePath = *it;
@@ -38,11 +37,10 @@ void IndexSwiftSourceTask::operator()(iterator begin, iterator end,
   }
 }
 
-void
-SyntaxMutationFinder::findMutations(std::set<SourceFilePath> &sources,
-                                    mull::ASTMutationStorage &astMutationStorage,
-                                    mull::Diagnostics &diagnostics,
-                                    const mull::Configuration &config) {
+void SyntaxMutationFinder::findMutations(
+    std::set<SourceFilePath> &sources,
+    mull::ASTMutationStorage &astMutationStorage,
+    mull::Diagnostics &diagnostics, const mull::Configuration &config) {
   std::vector<std::pair<SourceFilePath, std::unique_ptr<ASTMutationStorage>>>
       mutationsAsVector;
   std::vector<IndexSwiftSourceTask> tasks;

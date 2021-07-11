@@ -51,10 +51,10 @@ void MutantExecutionTask::operator()(iterator begin, iterator end, Out &storage,
     auto &mutant = *it;
     ExecutionResult result;
     if (mutant->isCovered()) {
-      result = runner.runProgram(
-          executable, arguments, {mutant->getIdentifier()},
-          baseline.runningTime * 10, configuration.captureMutantOutput,
-          std::nullopt);
+      result =
+          runner.runProgram(executable, arguments, {mutant->getIdentifier()},
+                            baseline.runningTime * 10,
+                            configuration.captureMutantOutput, std::nullopt);
     } else {
       result.status = NotCovered;
     }
@@ -92,15 +92,16 @@ std::unique_ptr<Result> XCTestInvocation::run() {
   std::vector<MutantExecutionTask> tasks;
   tasks.reserve(config.parallelization.mutantExecutionWorkers);
   for (int i = 0; i < config.parallelization.mutantExecutionWorkers; i++) {
-    tasks.emplace_back(config, diagnostics, xcrun, testBundle.str(), baseline, XCTestArgs);
+    tasks.emplace_back(config, diagnostics, xcrun, testBundle.str(), baseline,
+                       XCTestArgs);
   }
   TaskExecutor<MutantExecutionTask> mutantRunner(diagnostics, "Running mutants",
                                                  mutants, mutationResults,
                                                  std::move(tasks));
   mutantRunner.execute();
 
-  return std::make_unique<Result>(
-      std::move(mutants), std::move(mutationResults));
+  return std::make_unique<Result>(std::move(mutants),
+                                  std::move(mutationResults));
 }
 
 MutantList XCTestInvocation::extractMutantInfo() {
