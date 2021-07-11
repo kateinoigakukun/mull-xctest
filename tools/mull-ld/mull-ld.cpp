@@ -98,7 +98,7 @@ void filterMullOptions(const llvm::ArrayRef<const char *> &args,
 }
 
 static void validateInputFiles(const std::vector<std::string> &inputFiles) {
-  for (const auto inputFile : inputFiles) {
+  for (const auto &inputFile : inputFiles) {
     if (access(inputFile.c_str(), R_OK) != 0) {
       perror(inputFile.c_str());
       exit(1);

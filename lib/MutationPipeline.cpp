@@ -42,31 +42,26 @@ static void dumpLLVM(Program &program, std::string destDir) {
 
 std::vector<std::string> MutationPipeline::run() {
   const auto workers = config.parallelization.workers;
+  std::vector<std::string> outputObjectFiles;
   std::vector<std::unique_ptr<llvm::MemoryBuffer>> bitcodeBuffers;
+  std::vector<std::unique_ptr<mull::Bitcode>> bitcode;
 
   // Step 1: Extract bitcode section buffer from object files
-  std::vector<mull_xctest::ExtractEmbeddedFileTask> extractTasks;
-  for (int i = 0; i < workers; i++) {
-    extractTasks.emplace_back(diagnostics);
+  for (std::string inputFile : inputObjects) {
+    std::unique_ptr<llvm::MemoryBuffer> buffer = extractEmbeddedFile(inputFile, diagnostics);
+    if (!buffer) {
+      // if failed to extract, pass it to linker directly
+      outputObjectFiles.push_back(inputFile);
+      continue;
+    }
+    std::unique_ptr<mull::Bitcode> bc = loadBitcodeFromBuffer(std::move(buffer), diagnostics);
+    if (!bc) {
+      // if failed to load, pass it to linker directly
+      outputObjectFiles.push_back(inputFile);
+      continue;
+    }
+    bitcode.push_back(std::move(bc));
   }
-  TaskExecutor<mull_xctest::ExtractEmbeddedFileTask> extractExecutor(
-      diagnostics, "Extracting embeded bitcode", inputObjects, bitcodeBuffers,
-      std::move(extractTasks));
-  extractExecutor.execute();
-
-  // Step 2: Load LLVM bitcode module from extracted raw buffer
-  std::vector<std::unique_ptr<llvm::LLVMContext>> contexts;
-  std::vector<mull_xctest::LoadBitcodeFromBufferTask> tasks;
-  for (int i = 0; i < workers; i++) {
-    auto context = std::make_unique<llvm::LLVMContext>();
-    tasks.emplace_back(diagnostics);
-    contexts.push_back(std::move(context));
-  }
-  std::vector<std::unique_ptr<mull::Bitcode>> bitcode;
-  mull::TaskExecutor<mull_xctest::LoadBitcodeFromBufferTask> loadExecutor(
-      diagnostics, "Loading bitcode files", bitcodeBuffers, bitcode,
-      std::move(tasks));
-  loadExecutor.execute();
 
   mull::Program program(std::move(bitcode));
 
@@ -121,12 +116,12 @@ std::vector<std::string> MutationPipeline::run() {
   for (int i = 0; i < workers; i++) {
     compilationTasks.emplace_back(toolchain);
   }
-  std::vector<std::string> objectFiles;
+
   TaskExecutor<OriginalCompilationTask> mutantCompiler(
-      diagnostics, "Compiling original code", program.bitcode(), objectFiles,
+      diagnostics, "Compiling original code", program.bitcode(), outputObjectFiles,
       std::move(compilationTasks));
   mutantCompiler.execute();
-  return objectFiles;
+  return outputObjectFiles;
 }
 
 static std::unique_ptr<llvm::coverage::CoverageMapping>

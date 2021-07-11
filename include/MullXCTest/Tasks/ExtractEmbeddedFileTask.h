@@ -8,6 +8,10 @@
 
 namespace mull_xctest {
 
+std::unique_ptr<llvm::MemoryBuffer>
+extractEmbeddedFile(llvm::StringRef inputFile,
+                    mull::Diagnostics &diagnostics);
+
 class ExtractEmbeddedFileTask {
 public:
   using In = std::vector<std::string>;

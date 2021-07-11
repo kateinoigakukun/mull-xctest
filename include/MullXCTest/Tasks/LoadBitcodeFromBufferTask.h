@@ -10,6 +10,10 @@
 
 namespace mull_xctest {
 
+std::unique_ptr<mull::Bitcode>
+loadBitcodeFromBuffer(std::unique_ptr<llvm::MemoryBuffer> buffer,
+                      mull::Diagnostics &diagnostics);
+
 class LoadBitcodeFromBufferTask {
 public:
   using In = std::vector<std::unique_ptr<llvm::MemoryBuffer>>;
