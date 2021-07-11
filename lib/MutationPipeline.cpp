@@ -126,7 +126,7 @@ std::vector<std::string> MutationPipeline::run() {
       diagnostics, "Compiling original code", program.bitcode(), objectFiles,
       std::move(compilationTasks));
   mutantCompiler.execute();
-  return std::move(objectFiles);
+  return objectFiles;
 }
 
 static std::unique_ptr<llvm::coverage::CoverageMapping>
@@ -241,8 +241,8 @@ MutationPipeline::findMutationPoints(Program &program) {
   std::vector<FunctionUnderTest> filteredFunctions =
       filterFunctions(functionsUnderTest);
   selectInstructions(filteredFunctions);
-  return std::move(mutationsFinder.getMutationPoints(diagnostics, program,
-                                                     filteredFunctions));
+  return mutationsFinder.getMutationPoints(diagnostics, program,
+                                           filteredFunctions);
 }
 
 void MutationPipeline::selectInstructions(

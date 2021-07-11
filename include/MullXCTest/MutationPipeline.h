@@ -41,9 +41,9 @@ public:
                    const mull::Configuration &config,
                    const MutationPipelineConfig &pipelineConfig)
       : inputObjects(inputObjects), targetExecutables(targetExecutables),
+        diagnostics(diagnostics), config(config),
+        pipelineConfig(pipelineConfig), singleTask(diagnostics),
         filters(filters), mutationsFinder(mutationsFinder),
-        diagnostics(diagnostics), config(config), singleTask(diagnostics),
-        pipelineConfig(pipelineConfig),
         astMutationStorage(diagnostics) {}
   /// @return list of compiled object files
   std::vector<std::string> run();

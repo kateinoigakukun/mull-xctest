@@ -8,5 +8,5 @@ mull_xctest::ExtractMutantInfo(std::string binaryPath,
                                mull::MutatorsFactory &factory,
                                mull::Diagnostics &diags) {
   mull::MutantExtractor extractor(diags);
-  return std::move(extractor.extractMutants(binaryPath));
+  return extractor.extractMutants(binaryPath);
 }
