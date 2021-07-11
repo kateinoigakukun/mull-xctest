@@ -48,7 +48,10 @@ void ExtractEmbeddedFileTask::operator()(iterator begin, iterator end,
     const auto *machOObjectFile =
         dyn_cast<object::MachOObjectFile>(binaryOrErr->getBinary());
     if (!machOObjectFile) {
-      diagnostics.warning("input file is not mach-o object file");
+      std::stringstream errorMessage;
+      errorMessage << "input file is not mach-o object file: "
+                   << inputFile.str();
+      diagnostics.warning(errorMessage.str());
       continue;
     }
 
