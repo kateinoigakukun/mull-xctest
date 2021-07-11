@@ -1,0 +1,6 @@
+{
+    "executable": "/usr/bin/swift",
+    "arguments": [
+      "build", "--build-tests"
+    ]
+}
