@@ -10,12 +10,19 @@ else()
   message(FATAL_ERROR "Unexpected build type: ${CMAKE_BUILD_TYPE}")
 endif()
 
+set(swift_triple_opt)
+if(NOT "${CMAKE_Swift_COMPILER_TARGET}" STREQUAL "")
+  list(APPEND swift_triple_opt "--triple" ${CMAKE_Swift_COMPILER_TARGET})
+endif()
+
+
 ExternalProject_Add(SwiftSyntax
   GIT_REPOSITORY    https://github.com/apple/swift-syntax.git
   GIT_TAG           0.50300.0
   CONFIGURE_COMMAND ""
   INSTALL_COMMAND   ""
   BUILD_COMMAND ${swift_build}
+    ${swift_triple_opt}
     "--product" "SwiftSyntax" "--configuration" ${swift_build_type}
     "--package-path" "<SOURCE_DIR>"
     "--build-path" "<BINARY_DIR>"

@@ -11,6 +11,11 @@ else()
   get_filename_component(swiftc_bin "${CMAKE_Swift_COMPILER}/../swiftc" ABSOLUTE)
   get_filename_component(swift_lib "${CMAKE_Swift_COMPILER}/../../lib/swift/macosx" ABSOLUTE)
 
+  set(swift_target_opt)
+  if(NOT "${CMAKE_Swift_COMPILER_TARGET}" STREQUAL "")
+    list(APPEND swift_target_opt "-target" ${CMAKE_Swift_COMPILER_TARGET}${MACOSX_DEPLOYMENT_TARGET})
+  endif()
+
   set(swift_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/SwiftASTMutationFilter.swift)
   add_custom_command(
@@ -20,6 +25,7 @@ else()
       SwiftSyntax::SwiftSyntax
     COMMAND
       ${swiftc_bin} -emit-object
+        ${swift_target_opt}
         -parse-as-library
         -module-name MullSwiftSupportCore
         -o ${CMAKE_CURRENT_BINARY_DIR}/SwiftASTMutationFilter.swift.o
